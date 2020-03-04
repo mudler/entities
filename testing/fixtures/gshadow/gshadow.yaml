@@ -1,0 +1,5 @@
+kind: "gshadow"
+name: "test"
+password: "!"
+administrators: "foo,bar"
+members: "foo,baz"

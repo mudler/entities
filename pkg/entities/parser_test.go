@@ -41,5 +41,10 @@ var _ = Describe("Parser", func() {
 			Expect(err).Should(BeNil())
 			Expect(entity.(Group).Name).Should(Equal("foo"))
 		})
+		It("understands the gshadow kind", func() {
+			entity, err := p.ReadEntity("../../testing/fixtures/gshadow/gshadow.yaml")
+			Expect(err).Should(BeNil())
+			Expect(entity.(GShadow).Name).Should(Equal("test"))
+		})
 	})
 })

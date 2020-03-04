@@ -1,0 +1,5 @@
+kind: "gshadow"
+name: "postmaster"
+password: "foo"
+administrators: "barred"
+members: "baz"
