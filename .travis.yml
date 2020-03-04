@@ -6,4 +6,4 @@ env:
 before_install:
   - make deps
 script:
-  - make test
+  - make build test
