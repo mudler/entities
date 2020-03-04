@@ -40,15 +40,14 @@ type Parser struct{}
 
 func (p Parser) ReadEntity(entity string) (Entity, error) {
 	var signature Signature
-	var e DefaultEntity
 	yamlFile, err := ioutil.ReadFile(entity)
 	if err != nil {
-		return &e, errors.Wrap(err, "Failed while reading entity file")
+		return nil, errors.Wrap(err, "Failed while reading entity file")
 	}
 
 	err = yaml.Unmarshal(yamlFile, &signature)
 	if err != nil {
-		return &e, errors.Wrap(err, "Failed while parsing entity file")
+		return nil, errors.Wrap(err, "Failed while parsing entity file")
 	}
 
 	switch signature.Kind {
@@ -57,26 +56,26 @@ func (p Parser) ReadEntity(entity string) (Entity, error) {
 
 		err = yaml.Unmarshal(yamlFile, &user)
 		if err != nil {
-			return &e, errors.Wrap(err, "Failed while parsing entity file")
+			return nil, errors.Wrap(err, "Failed while parsing entity file")
 		}
-		e.User = &user
+		return user, nil
 	case ShadowKind:
 		var shad Shadow
 
 		err = yaml.Unmarshal(yamlFile, &shad)
 		if err != nil {
-			return &e, errors.Wrap(err, "Failed while parsing entity file")
+			return nil, errors.Wrap(err, "Failed while parsing entity file")
 		}
-		e.Shadow = &shad
+		return shad, nil
 	case GroupKind:
 		var group Group
 
 		err = yaml.Unmarshal(yamlFile, &group)
 		if err != nil {
-			return &e, errors.Wrap(err, "Failed while parsing entity file")
+			return nil, errors.Wrap(err, "Failed while parsing entity file")
 		}
-		e.Group = &group
+		return group, nil
 	}
 
-	return &e, nil
+	return nil, errors.New("Unsupported format")
 }

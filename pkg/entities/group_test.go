@@ -45,9 +45,9 @@ var _ = Describe("Group", func() {
 
 			entity, err := p.ReadEntity("../../testing/fixtures/group/update.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetGroup().Name).Should(Equal("sddm"))
+			Expect(entity.(Group).Name).Should(Equal("sddm"))
 
-			err = entity.GetGroup().Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name())
 			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
@@ -78,9 +78,9 @@ ntp:x:123:
 
 			entity, err := p.ReadEntity("../../testing/fixtures/group/group.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetGroup().Name).Should(Equal("foo"))
+			Expect(entity.(Group).Name).Should(Equal("foo"))
 
-			entity.GetGroup().Apply(tmpFile.Name())
+			entity.Apply(tmpFile.Name())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
@@ -96,7 +96,7 @@ ntp:x:123:
 foo:xx:1:one,two,tree
 `))
 
-			entity.GetGroup().Delete(tmpFile.Name())
+			entity.Delete(tmpFile.Name())
 			dat, err = ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(

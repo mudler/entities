@@ -16,25 +16,7 @@
 package entities
 
 type Entity interface {
-	GetUserPasswd() UserPasswd
-	GetShadow() Shadow
-	GetGroup() Group
-}
-
-type DefaultEntity struct {
-	User   *UserPasswd
-	Shadow *Shadow
-	Group  *Group
-}
-
-func (e *DefaultEntity) GetUserPasswd() UserPasswd {
-	return *e.User
-}
-
-func (e *DefaultEntity) GetShadow() Shadow {
-	return *e.Shadow
-}
-
-func (e *DefaultEntity) GetGroup() Group {
-	return *e.Group
+	String() string
+	Delete(s string) error
+	Apply(s string) error
 }

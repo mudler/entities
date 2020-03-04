@@ -71,9 +71,9 @@ var _ = Describe("Shadow", func() {
 
 			entity, err := p.ReadEntity("../../testing/fixtures/shadow/update.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetShadow().Username).Should(Equal("halt"))
+			Expect(entity.(Shadow).Username).Should(Equal("halt"))
 
-			err = entity.GetShadow().Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name())
 			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
@@ -107,9 +107,9 @@ uucp:*:9797:0:::::
 
 			entity, err := p.ReadEntity("../../testing/fixtures/shadow/user.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetShadow().Username).Should(Equal("foo"))
+			Expect(entity.(Shadow).Username).Should(Equal("foo"))
 
-			entity.GetShadow().Apply(tmpFile.Name())
+			entity.Apply(tmpFile.Name())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
@@ -127,7 +127,7 @@ uucp:*:9797:0:::::
 foo:bar:1:2:3:4:5:6:
 `))
 
-			entity.GetShadow().Delete(tmpFile.Name())
+			entity.Delete(tmpFile.Name())
 			dat, err = ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(

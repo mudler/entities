@@ -45,9 +45,10 @@ var _ = Describe("User", func() {
 
 			entity, err := p.ReadEntity("../../testing/fixtures/simple/update.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetUserPasswd().Username).Should(Equal("root"))
+			Expect(entity.(UserPasswd).Username).Should(Equal("root"))
 
-			entity.GetUserPasswd().Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name())
+			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
@@ -78,9 +79,10 @@ gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
 
 			entity, err := p.ReadEntity("../../testing/fixtures/simple/user.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetUserPasswd().Username).Should(Equal("foo"))
+			Expect(entity.(UserPasswd).Username).Should(Equal("foo"))
 
-			entity.GetUserPasswd().Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name())
+			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
@@ -97,7 +99,7 @@ gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
 foo:pass:0:0:Foo!:/home/foo:/bin/bash
 `))
 
-			entity.GetUserPasswd().Delete(tmpFile.Name())
+			entity.Delete(tmpFile.Name())
 			dat, err = ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
