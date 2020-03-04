@@ -23,7 +23,9 @@ import (
 )
 
 const (
-	UserKind = "user"
+	UserKind   = "user"
+	ShadowKind = "shadow"
+	GroupKind  = "group"
 )
 
 type EntitiesParser interface {
@@ -58,6 +60,22 @@ func (p Parser) ReadEntity(entity string) (Entity, error) {
 			return &e, errors.Wrap(err, "Failed while parsing entity file")
 		}
 		e.User = &user
+	case ShadowKind:
+		var shad Shadow
+
+		err = yaml.Unmarshal(yamlFile, &shad)
+		if err != nil {
+			return &e, errors.Wrap(err, "Failed while parsing entity file")
+		}
+		e.Shadow = &shad
+	case GroupKind:
+		var group Group
+
+		err = yaml.Unmarshal(yamlFile, &group)
+		if err != nil {
+			return &e, errors.Wrap(err, "Failed while parsing entity file")
+		}
+		e.Group = &group
 	}
 
 	return &e, nil

@@ -26,10 +26,20 @@ import (
 var _ = Describe("Parser", func() {
 	Context("Loading entities via yaml", func() {
 		p := &Parser{}
-		It("understand the kind", func() {
+		It("understands the user kind", func() {
 			entity, err := p.ReadEntity("../../testing/fixtures/simple/user.yaml")
 			Expect(err).Should(BeNil())
 			Expect(entity.GetUserPasswd().Username).Should(Equal("foo"))
+		})
+		It("understands the shadow kind", func() {
+			entity, err := p.ReadEntity("../../testing/fixtures/shadow/user.yaml")
+			Expect(err).Should(BeNil())
+			Expect(entity.GetShadow().Username).Should(Equal("foo"))
+		})
+		It("understands the group kind", func() {
+			entity, err := p.ReadEntity("../../testing/fixtures/group/group.yaml")
+			Expect(err).Should(BeNil())
+			Expect(entity.GetGroup().Name).Should(Equal("foo"))
 		})
 	})
 })

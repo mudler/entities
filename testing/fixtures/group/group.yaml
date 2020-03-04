@@ -1,0 +1,5 @@
+kind: "group"
+group_name: "foo"
+password: "xx"
+gid: 1
+users: "one,two,tree"

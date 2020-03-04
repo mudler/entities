@@ -18,6 +18,7 @@ package entities_test
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -27,7 +28,32 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("User", func() {
+func copy(src, dst string) (int64, error) {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return 0, err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return 0, fmt.Errorf("%s is not a regular file", src)
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return 0, err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return 0, err
+	}
+	defer destination.Close()
+	nBytes, err := io.Copy(destination, source)
+	return nBytes, err
+}
+
+var _ = Describe("Shadow", func() {
 	Context("Loading entities via yaml", func() {
 		p := &Parser{}
 
@@ -40,27 +66,30 @@ var _ = Describe("User", func() {
 			// cleaning up by removing the file
 			defer os.Remove(tmpFile.Name())
 
-			_, err = copy("../../testing/fixtures/simple/passwd", tmpFile.Name())
+			_, err = copy("../../testing/fixtures/shadow/shadow", tmpFile.Name())
 			Expect(err).Should(BeNil())
 
-			entity, err := p.ReadEntity("../../testing/fixtures/simple/update.yaml")
+			entity, err := p.ReadEntity("../../testing/fixtures/shadow/update.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetUserPasswd().Username).Should(Equal("root"))
+			Expect(entity.GetShadow().Username).Should(Equal("halt"))
 
-			entity.GetUserPasswd().Apply(tmpFile.Name())
+			err = entity.GetShadow().Apply(tmpFile.Name())
+			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
+
 			Expect(string(dat)).To(Equal(
-				`root:x:0:0:Foo!:/home/foo:/bin/bash
-bin:x:1:1:bin:/bin:/bin/false
-daemon:x:2:2:daemon:/sbin:/bin/false
-adm:x:3:4:adm:/var/adm:/bin/false
-lp:x:4:7:lp:/var/spool/lpd:/bin/false
-sync:x:5:0:sync:/sbin:/bin/sync
-shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
-unbound:x:999:955:added by portage for unbound:/etc/unbound:/sbin/nologin
-gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
+				`halt:bar:1:2:3:4:5:6:
+operator:*:9797:0:::::
+shutdown:*:9797:0:::::
+sync:*:9797:0:::::
+bin:*:9797:0:::::
+daemon:*:9797:0:::::
+adm:*:9797:0:::::
+lp:*:9797:0:::::
+news:*:9797:0:::::
+uucp:*:9797:0:::::
 `))
 		})
 
@@ -73,43 +102,45 @@ gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
 			// cleaning up by removing the file
 			defer os.Remove(tmpFile.Name())
 
-			_, err = copy("../../testing/fixtures/simple/passwd", tmpFile.Name())
+			_, err = copy("../../testing/fixtures/shadow/shadow", tmpFile.Name())
 			Expect(err).Should(BeNil())
 
-			entity, err := p.ReadEntity("../../testing/fixtures/simple/user.yaml")
+			entity, err := p.ReadEntity("../../testing/fixtures/shadow/user.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetUserPasswd().Username).Should(Equal("foo"))
+			Expect(entity.GetShadow().Username).Should(Equal("foo"))
 
-			entity.GetUserPasswd().Apply(tmpFile.Name())
+			entity.GetShadow().Apply(tmpFile.Name())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
-				`root:x:0:0:root:/root:/bin/bash
-bin:x:1:1:bin:/bin:/bin/false
-daemon:x:2:2:daemon:/sbin:/bin/false
-adm:x:3:4:adm:/var/adm:/bin/false
-lp:x:4:7:lp:/var/spool/lpd:/bin/false
-sync:x:5:0:sync:/sbin:/bin/sync
-shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
-unbound:x:999:955:added by portage for unbound:/etc/unbound:/sbin/nologin
-gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
-foo:pass:0:0:Foo!:/home/foo:/bin/bash
+				`halt:*:9797:0:::::
+operator:*:9797:0:::::
+shutdown:*:9797:0:::::
+sync:*:9797:0:::::
+bin:*:9797:0:::::
+daemon:*:9797:0:::::
+adm:*:9797:0:::::
+lp:*:9797:0:::::
+news:*:9797:0:::::
+uucp:*:9797:0:::::
+foo:bar:1:2:3:4:5:6:
 `))
 
-			entity.GetUserPasswd().Delete(tmpFile.Name())
+			entity.GetShadow().Delete(tmpFile.Name())
 			dat, err = ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
-				`root:x:0:0:root:/root:/bin/bash
-bin:x:1:1:bin:/bin:/bin/false
-daemon:x:2:2:daemon:/sbin:/bin/false
-adm:x:3:4:adm:/var/adm:/bin/false
-lp:x:4:7:lp:/var/spool/lpd:/bin/false
-sync:x:5:0:sync:/sbin:/bin/sync
-shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
-unbound:x:999:955:added by portage for unbound:/etc/unbound:/sbin/nologin
-gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
+				`halt:*:9797:0:::::
+operator:*:9797:0:::::
+shutdown:*:9797:0:::::
+sync:*:9797:0:::::
+bin:*:9797:0:::::
+daemon:*:9797:0:::::
+adm:*:9797:0:::::
+lp:*:9797:0:::::
+news:*:9797:0:::::
+uucp:*:9797:0:::::
 `))
 		})
 	})

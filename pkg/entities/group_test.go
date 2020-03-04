@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("User", func() {
+var _ = Describe("Group", func() {
 	Context("Loading entities via yaml", func() {
 		p := &Parser{}
 
@@ -40,27 +40,27 @@ var _ = Describe("User", func() {
 			// cleaning up by removing the file
 			defer os.Remove(tmpFile.Name())
 
-			_, err = copy("../../testing/fixtures/simple/passwd", tmpFile.Name())
+			_, err = copy("../../testing/fixtures/group/group", tmpFile.Name())
 			Expect(err).Should(BeNil())
 
-			entity, err := p.ReadEntity("../../testing/fixtures/simple/update.yaml")
+			entity, err := p.ReadEntity("../../testing/fixtures/group/update.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetUserPasswd().Username).Should(Equal("root"))
+			Expect(entity.GetGroup().Name).Should(Equal("sddm"))
 
-			entity.GetUserPasswd().Apply(tmpFile.Name())
+			err = entity.GetGroup().Apply(tmpFile.Name())
+			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
-				`root:x:0:0:Foo!:/home/foo:/bin/bash
-bin:x:1:1:bin:/bin:/bin/false
-daemon:x:2:2:daemon:/sbin:/bin/false
-adm:x:3:4:adm:/var/adm:/bin/false
-lp:x:4:7:lp:/var/spool/lpd:/bin/false
-sync:x:5:0:sync:/sbin:/bin/sync
-shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
-unbound:x:999:955:added by portage for unbound:/etc/unbound:/sbin/nologin
-gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
+				`nm-openconnect:x:979:
+sddm:xx:1:one,two,tree
+openvpn:x:977:
+nm-openvpn:x:976:
+minetest:x:975:
+abrt:x:974:
+geoclue:x:973:
+ntp:x:123:
 `))
 		})
 
@@ -73,43 +73,41 @@ gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
 			// cleaning up by removing the file
 			defer os.Remove(tmpFile.Name())
 
-			_, err = copy("../../testing/fixtures/simple/passwd", tmpFile.Name())
+			_, err = copy("../../testing/fixtures/group/group", tmpFile.Name())
 			Expect(err).Should(BeNil())
 
-			entity, err := p.ReadEntity("../../testing/fixtures/simple/user.yaml")
+			entity, err := p.ReadEntity("../../testing/fixtures/group/group.yaml")
 			Expect(err).Should(BeNil())
-			Expect(entity.GetUserPasswd().Username).Should(Equal("foo"))
+			Expect(entity.GetGroup().Name).Should(Equal("foo"))
 
-			entity.GetUserPasswd().Apply(tmpFile.Name())
+			entity.GetGroup().Apply(tmpFile.Name())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
-				`root:x:0:0:root:/root:/bin/bash
-bin:x:1:1:bin:/bin:/bin/false
-daemon:x:2:2:daemon:/sbin:/bin/false
-adm:x:3:4:adm:/var/adm:/bin/false
-lp:x:4:7:lp:/var/spool/lpd:/bin/false
-sync:x:5:0:sync:/sbin:/bin/sync
-shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
-unbound:x:999:955:added by portage for unbound:/etc/unbound:/sbin/nologin
-gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
-foo:pass:0:0:Foo!:/home/foo:/bin/bash
+				`nm-openconnect:x:979:
+sddm:x:978:
+openvpn:x:977:
+nm-openvpn:x:976:
+minetest:x:975:
+abrt:x:974:
+geoclue:x:973:
+ntp:x:123:
+foo:xx:1:one,two,tree
 `))
 
-			entity.GetUserPasswd().Delete(tmpFile.Name())
+			entity.GetGroup().Delete(tmpFile.Name())
 			dat, err = ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
-				`root:x:0:0:root:/root:/bin/bash
-bin:x:1:1:bin:/bin:/bin/false
-daemon:x:2:2:daemon:/sbin:/bin/false
-adm:x:3:4:adm:/var/adm:/bin/false
-lp:x:4:7:lp:/var/spool/lpd:/bin/false
-sync:x:5:0:sync:/sbin:/bin/sync
-shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
-unbound:x:999:955:added by portage for unbound:/etc/unbound:/sbin/nologin
-gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
+				`nm-openconnect:x:979:
+sddm:x:978:
+openvpn:x:977:
+nm-openvpn:x:976:
+minetest:x:975:
+abrt:x:974:
+geoclue:x:973:
+ntp:x:123:
 `))
 		})
 	})

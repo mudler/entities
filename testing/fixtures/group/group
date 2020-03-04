@@ -1,0 +1,8 @@
+nm-openconnect:x:979:
+sddm:x:978:
+openvpn:x:977:
+nm-openvpn:x:976:
+minetest:x:975:
+abrt:x:974:
+geoclue:x:973:
+ntp:x:123:

@@ -1,0 +1,9 @@
+kind: "shadow"
+username: "halt"
+password: "bar"
+last_changed: 1
+minimum_changed: 2
+maximum_changed: 3
+warn: 4
+inactive: 5
+expire: 6
