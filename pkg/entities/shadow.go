@@ -121,6 +121,13 @@ func (u Shadow) Delete(s string) error {
 
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
+	current, err := ParseShadow(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed parsing passwd")
+	}
+	if _, ok := current[u.Username]; ok {
+		return errors.New("Entity already present")
+	}
 	permissions, err := permbits.Stat(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")

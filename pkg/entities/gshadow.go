@@ -104,6 +104,13 @@ func (u GShadow) Delete(s string) error {
 }
 
 func (u GShadow) Create(s string) error {
+	current, err := ParseGShadow(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed parsing passwd")
+	}
+	if _, ok := current[u.Name]; ok {
+		return errors.New("Entity already present")
+	}
 	permissions, err := permbits.Stat(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")

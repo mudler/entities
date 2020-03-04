@@ -68,6 +68,13 @@ func (u UserPasswd) Delete(s string) error {
 }
 
 func (u UserPasswd) Create(s string) error {
+	current, err := passwd.ParseFile(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed parsing passwd")
+	}
+	if _, ok := current[u.Username]; ok {
+		return errors.New("Entity already present")
+	}
 	permissions, err := permbits.Stat(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")

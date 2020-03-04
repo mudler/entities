@@ -107,6 +107,13 @@ func (u Group) Delete(s string) error {
 }
 
 func (u Group) Create(s string) error {
+	current, err := ParseGroup(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed parsing passwd")
+	}
+	if _, ok := current[u.Name]; ok {
+		return errors.New("Entity already present")
+	}
 	permissions, err := permbits.Stat(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")
