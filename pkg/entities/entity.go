@@ -15,8 +15,11 @@
 
 package entities
 
+// Entity represent something that needs to be applied to a file
+
 type Entity interface {
 	String() string
 	Delete(s string) error
+	Create(s string) error
 	Apply(s string) error
 }

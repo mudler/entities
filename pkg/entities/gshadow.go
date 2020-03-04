@@ -103,6 +103,24 @@ func (u GShadow) Delete(s string) error {
 	return nil
 }
 
+func (u GShadow) Create(s string) error {
+	permissions, err := permbits.Stat(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed getting permissions")
+	}
+	f, err := os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
+	if err != nil {
+		return errors.Wrap(err, "Could not read")
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(u.String() + "\n"); err != nil {
+		return errors.Wrap(err, "Could not write")
+	}
+	return nil
+}
+
 func (u GShadow) Apply(s string) error {
 	current, err := ParseGShadow(s)
 	if err != nil {
@@ -134,16 +152,7 @@ func (u GShadow) Apply(s string) error {
 
 	} else {
 		// Add it
-		f, err := os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
-		if err != nil {
-			return errors.Wrap(err, "Could not read")
-		}
-
-		defer f.Close()
-
-		if _, err = f.WriteString(u.String() + "\n"); err != nil {
-			return errors.Wrap(err, "Could not write")
-		}
+		return u.Create(s)
 
 	}
 
