@@ -15,6 +15,8 @@
 
 package entities
 
+import "strings"
+
 // Entity represent something that needs to be applied to a file
 
 type Entity interface {
@@ -22,4 +24,13 @@ type Entity interface {
 	Delete(s string) error
 	Create(s string) error
 	Apply(s string) error
+}
+
+func entityIdentifier(s string) string {
+	fs := strings.Split(s, ":")
+	if len(fs) == 0 {
+		return ""
+	}
+
+	return fs[0]
 }

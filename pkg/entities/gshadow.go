@@ -140,7 +140,7 @@ func (u GShadow) Apply(s string) error {
 		lines := strings.Split(string(input), "\n")
 
 		for i, line := range lines {
-			if strings.HasPrefix(line, u.Name) { // FIXME: Drop greedy match
+			if entityIdentifier(line) == u.Name {
 				lines[i] = u.String()
 			}
 		}

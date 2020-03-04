@@ -157,7 +157,7 @@ func (u Shadow) Apply(s string) error {
 		lines := strings.Split(string(input), "\n")
 
 		for i, line := range lines {
-			if strings.HasPrefix(line, u.Username) {
+			if entityIdentifier(line) == u.Username {
 				lines[i] = u.String()
 			}
 		}
