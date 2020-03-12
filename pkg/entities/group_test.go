@@ -96,6 +96,26 @@ ntp:x:123:
 foo:xx:1:one,two,tree
 `))
 
+			entity, err = p.ReadEntity("../../testing/fixtures/group/group_add.yaml")
+			Expect(err).Should(BeNil())
+			Expect(entity.(Group).Name).Should(Equal("foo"))
+
+			entity.Apply(tmpFile.Name())
+
+			dat, err = ioutil.ReadFile(tmpFile.Name())
+			Expect(err).Should(BeNil())
+			Expect(string(dat)).To(Equal(
+				`nm-openconnect:x:979:
+sddm:x:978:
+openvpn:x:977:
+nm-openvpn:x:976:
+minetest:x:975:
+abrt:x:974:
+geoclue:x:973:
+ntp:x:123:
+foo:xx:1:one,two,tree,four
+`))
+
 			entity.Delete(tmpFile.Name())
 			dat, err = ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())

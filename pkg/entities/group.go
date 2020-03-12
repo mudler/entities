@@ -17,7 +17,6 @@ package entities
 
 import (
 	"bufio"
-	"bytes"
 	"io"
 	"io/ioutil"
 	"os"
@@ -69,20 +68,26 @@ func parseGroupLine(line string) (string, Group, error) {
 	if err != nil {
 		return "", Group{}, errors.New("Expected int for gid")
 	}
-	return fs[0], Group{fs[0], fs[1], gid, fs[3]}, nil
+	return fs[0], Group{fs[0], fs[1], &gid, fs[3]}, nil
 }
 
 type Group struct {
 	Name     string `yaml:"group_name"`
 	Password string `yaml:"password"`
-	Gid      int    `yaml:"gid"`
+	Gid      *int   `yaml:"gid"`
 	Users    string `yaml:"users"`
 }
 
 func (u Group) String() string {
+	var gid string
+	if u.Gid == nil {
+		gid = ""
+	} else {
+		gid = strconv.Itoa(*u.Gid)
+	}
 	return strings.Join([]string{u.Name,
 		u.Password,
-		strconv.Itoa(u.Gid),
+		gid,
 		u.Users,
 	}, ":")
 }
@@ -96,9 +101,24 @@ func (u Group) Delete(s string) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")
 	}
-	lines := bytes.Replace(input, []byte(u.String()+"\n"), []byte(""), 1)
 
-	err = ioutil.WriteFile(s, []byte(lines), os.FileMode(permissions))
+	// Drop the line which match the identifier. Don't look at the content as in other cases
+	lines := strings.Split(string(input), "\n")
+	var toremove int
+	for i, line := range lines {
+		if entityIdentifier(line) == u.Name {
+			toremove = i
+		}
+	}
+
+	// Remove the element at index i from a.
+	copy(lines[toremove:], lines[toremove+1:]) // Shift a[i+1:] left one index.
+	lines[len(lines)-1] = ""                   // Erase last element (write zero value).
+	lines = lines[:len(lines)-1]               // Truncate slice.
+
+	output := strings.Join(lines, "\n")
+
+	err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
 	if err != nil {
 		return errors.Wrap(err, "Could not write")
 	}
@@ -132,6 +152,18 @@ func (u Group) Create(s string) error {
 	return nil
 }
 
+func Unique(strSlice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range strSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 func (u Group) Apply(s string) error {
 	current, err := ParseGroup(s)
 	if err != nil {
@@ -151,6 +183,25 @@ func (u Group) Apply(s string) error {
 
 		for i, line := range lines {
 			if entityIdentifier(line) == u.Name {
+				// Merge the groups, don't override the whole user.
+				_, g, err := parseGroupLine(lines[i])
+				if err != nil {
+					return errors.Wrap(err, "Failed parsing current group")
+				}
+				if len(g.Users) > 0 {
+					currentUsers := strings.Split(g.Users, ",")
+					currentUsers = append(currentUsers, u.Users)
+					u.Users = strings.Join(Unique(currentUsers), ",")
+				}
+				if len(g.Name) == 0 {
+					u.Name = g.Name
+				}
+				if len(u.Password) == 0 {
+					u.Password = g.Password
+				}
+				if u.Gid == nil {
+					u.Gid = g.Gid
+				}
 				lines[i] = u.String()
 			}
 		}
