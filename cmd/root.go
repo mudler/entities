@@ -49,5 +49,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&entityFile, "file", "/etc/passwd", "File to manipulate (defaults /etc/passwd)")
+	rootCmd.PersistentFlags().StringVarP(&entityFile, "file", "f", "/etc/passwd", "File to manipulate (defaults /etc/passwd)")
 }
