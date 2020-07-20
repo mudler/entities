@@ -39,14 +39,10 @@ type Signature struct {
 
 type Parser struct{}
 
-func (p Parser) ReadEntity(entity string) (Entity, error) {
-	var signature Signature
-	yamlFile, err := ioutil.ReadFile(entity)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed while reading entity file")
-	}
+func (p Parser) ReadEntityFromBytes(yamlFile []byte) (Entity, error) {
 
-	err = yaml.Unmarshal(yamlFile, &signature)
+	var signature Signature
+	err := yaml.Unmarshal(yamlFile, &signature)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed while parsing entity file")
 	}
@@ -88,4 +84,12 @@ func (p Parser) ReadEntity(entity string) (Entity, error) {
 	}
 
 	return nil, errors.New("Unsupported format")
+}
+func (p Parser) ReadEntity(entity string) (Entity, error) {
+	yamlFile, err := ioutil.ReadFile(entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed while reading entity file")
+	}
+	return p.ReadEntityFromBytes(yamlFile)
+
 }
