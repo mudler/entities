@@ -18,11 +18,13 @@ package entities
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
@@ -99,6 +101,16 @@ func (u Shadow) String() string {
 	}, ":")
 }
 
+func (u Shadow) prepare() Shadow {
+	if u.LastChanged == "now" {
+		// POST: Set in last_changed the current days from 1970
+		now := time.Now()
+		days := now.Unix() / 24 / 60 / 60
+		u.LastChanged = fmt.Sprintf("%d", days)
+	}
+	return u
+}
+
 // FIXME: Delete can be shared across all of the supported Entities
 func (u Shadow) Delete(s string) error {
 	input, err := ioutil.ReadFile(s)
@@ -121,6 +133,7 @@ func (u Shadow) Delete(s string) error {
 
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
+	u = u.prepare()
 	current, err := ParseShadow(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
@@ -146,6 +159,7 @@ func (u Shadow) Create(s string) error {
 }
 
 func (u Shadow) Apply(s string) error {
+	u = u.prepare()
 	current, err := ParseShadow(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")

@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 
 	. "github.com/mudler/entities/pkg/entities"
 
@@ -143,5 +144,32 @@ news:*:9797:0:::::
 uucp:*:9797:0:::::
 `))
 		})
+
 	})
+
+	It("test Prepare", func() {
+
+		t := time.Now()
+		days := t.Unix() / 24 / 60 / 60
+		tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+		if err != nil {
+			fmt.Println("Cannot create temporary file", err)
+		}
+
+		// cleaning up by removing the file
+		defer os.Remove(tmpFile.Name())
+
+		s1 := &Shadow{
+			Username:    "user1",
+			Password:    "!",
+			LastChanged: "now",
+		}
+
+		s1.Apply(tmpFile.Name())
+
+		dat, err := ioutil.ReadFile(tmpFile.Name())
+		Expect(err).Should(BeNil())
+		Expect(string(dat)).To(Equal("user1:!:" + fmt.Sprintf("%d", days) + "::::::\n"))
+	})
+
 })
