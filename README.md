@@ -53,6 +53,8 @@ inactive: 5
 expire: 6
 ```
 
+To define `last_changed` with a value equal to current days from 1970 use `now`.
+
 ### Group
 
 ```yaml

@@ -1,2 +1,4 @@
 release/
 /entities
+*.swp
+*.swo
