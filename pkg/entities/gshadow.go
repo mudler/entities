@@ -28,6 +28,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+func gShadowDefault(s string) string {
+	if s == "" {
+		s = "/etc/gshadow"
+	}
+	return s
+}
+
 // ParseGShadow opens the file and parses it into a map from usernames to Entries
 func ParseGShadow(path string) (map[string]GShadow, error) {
 	file, err := os.Open(path)
@@ -85,6 +92,7 @@ func (u GShadow) String() string {
 }
 
 func (u GShadow) Delete(s string) error {
+	s = gShadowDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -104,6 +112,8 @@ func (u GShadow) Delete(s string) error {
 }
 
 func (u GShadow) Create(s string) error {
+	s = gShadowDefault(s)
+
 	current, err := ParseGShadow(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
@@ -129,6 +139,8 @@ func (u GShadow) Create(s string) error {
 }
 
 func (u GShadow) Apply(s string) error {
+	s = gShadowDefault(s)
+
 	current, err := ParseGShadow(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")

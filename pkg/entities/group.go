@@ -27,6 +27,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+func groupsDefault(s string) string {
+	if s == "" {
+		s = "/etc/group"
+	}
+	return s
+}
+
 // ParseGroup opens the file and parses it into a map from usernames to Entries
 func ParseGroup(path string) (map[string]Group, error) {
 	file, err := os.Open(path)
@@ -93,6 +100,7 @@ func (u Group) String() string {
 }
 
 func (u Group) Delete(s string) error {
+	s = groupsDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -127,6 +135,8 @@ func (u Group) Delete(s string) error {
 }
 
 func (u Group) Create(s string) error {
+	s = groupsDefault(s)
+
 	current, err := ParseGroup(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
@@ -165,6 +175,8 @@ func Unique(strSlice []string) []string {
 }
 
 func (u Group) Apply(s string) error {
+	s = groupsDefault(s)
+
 	current, err := ParseGroup(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")

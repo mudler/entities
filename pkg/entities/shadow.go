@@ -101,6 +101,13 @@ func (u Shadow) String() string {
 	}, ":")
 }
 
+func shadowDefault(s string) string {
+	if s == "" {
+		s = "/etc/shadow"
+	}
+	return s
+}
+
 func (u Shadow) prepare() Shadow {
 	if u.LastChanged == "now" {
 		// POST: Set in last_changed the current days from 1970
@@ -113,6 +120,7 @@ func (u Shadow) prepare() Shadow {
 
 // FIXME: Delete can be shared across all of the supported Entities
 func (u Shadow) Delete(s string) error {
+	s = shadowDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -133,6 +141,8 @@ func (u Shadow) Delete(s string) error {
 
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
+	s = shadowDefault(s)
+
 	u = u.prepare()
 	current, err := ParseShadow(s)
 	if err != nil {
@@ -159,6 +169,8 @@ func (u Shadow) Create(s string) error {
 }
 
 func (u Shadow) Apply(s string) error {
+	s = shadowDefault(s)
+
 	u = u.prepare()
 	current, err := ParseShadow(s)
 	if err != nil {
