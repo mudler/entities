@@ -79,10 +79,9 @@ var _ = Describe("Shadow", func() {
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
-
-			Expect(string(dat)).To(Equal(
-				`halt:bar:1:2:3:4:5:6:
-operator:*:9797:0:::::
+			Expect(string(dat)).To(MatchRegexp(`halt\:\$.*\:1:2:3:4:5:6:`))
+			Expect(string(dat)).To(ContainSubstring(
+				`operator:*:9797:0:::::
 shutdown:*:9797:0:::::
 sync:*:9797:0:::::
 bin:*:9797:0:::::
@@ -125,7 +124,7 @@ adm:*:9797:0:::::
 lp:*:9797:0:::::
 news:*:9797:0:::::
 uucp:*:9797:0:::::
-foo:bar:1:2:3:4:5:6:
+foo:$bar:1:2:3:4:5:6:
 `))
 
 			entity.Delete(tmpFile.Name())
@@ -149,27 +148,56 @@ uucp:*:9797:0:::::
 
 	It("test Prepare", func() {
 
-		t := time.Now()
-		days := t.Unix() / 24 / 60 / 60
-		tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
-		if err != nil {
-			fmt.Println("Cannot create temporary file", err)
-		}
+		By("Giving a specific user", func() {
+			t := time.Now()
+			days := t.Unix() / 24 / 60 / 60
+			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			if err != nil {
+				fmt.Println("Cannot create temporary file", err)
+			}
 
-		// cleaning up by removing the file
-		defer os.Remove(tmpFile.Name())
+			// cleaning up by removing the file
+			defer os.Remove(tmpFile.Name())
 
-		s1 := &Shadow{
-			Username:    "user1",
-			Password:    "!",
-			LastChanged: "now",
-		}
+			s1 := &Shadow{
+				Username:    "user1",
+				Password:    "$!",
+				LastChanged: "now",
+			}
 
-		s1.Apply(tmpFile.Name())
+			s1.Apply(tmpFile.Name())
 
-		dat, err := ioutil.ReadFile(tmpFile.Name())
-		Expect(err).Should(BeNil())
-		Expect(string(dat)).To(Equal("user1:!:" + fmt.Sprintf("%d", days) + "::::::\n"))
+			dat, err := ioutil.ReadFile(tmpFile.Name())
+			Expect(err).Should(BeNil())
+			Expect(string(dat)).To(Equal("user1:$!:" + fmt.Sprintf("%d", days) + "::::::\n"))
+
+		})
+
+		By("Giving a specific user", func() {
+			t := time.Now()
+			days := t.Unix() / 24 / 60 / 60
+			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			if err != nil {
+				fmt.Println("Cannot create temporary file", err)
+			}
+
+			// cleaning up by removing the file
+			defer os.Remove(tmpFile.Name())
+
+			s1 := &Shadow{
+				Username:    "user1",
+				Password:    "pass",
+				LastChanged: "now",
+			}
+
+			s1.Apply(tmpFile.Name())
+
+			dat, err := ioutil.ReadFile(tmpFile.Name())
+			Expect(err).Should(BeNil())
+			Expect(string(dat)).To(MatchRegexp(`user1\:\$.*\:` + fmt.Sprintf("%d", days) + ":.*"))
+
+		})
+
 	})
 
 })

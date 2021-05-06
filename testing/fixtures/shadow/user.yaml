@@ -1,6 +1,6 @@
 kind: "shadow"
 username: "foo"
-password: "bar"
+password: "$bar"
 last_changed: 1
 minimum_changed: 2
 maximum_changed: 3

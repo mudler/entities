@@ -21,10 +21,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/tredoe/osutil/user/crypt/sha512_crypt"
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
@@ -108,12 +111,37 @@ func shadowDefault(s string) string {
 	return s
 }
 
+const letterBytes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
+func encryptPassword(userPassword string) (string, error) {
+	salt := []byte(fmt.Sprintf("$6$%s", randStringBytes(8)))
+	c := sha512_crypt.New()
+	hash, err := c.Generate([]byte(userPassword), salt)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+
 func (u Shadow) prepare() Shadow {
 	if u.LastChanged == "now" {
 		// POST: Set in last_changed the current days from 1970
 		now := time.Now()
 		days := now.Unix() / 24 / 60 / 60
 		u.LastChanged = fmt.Sprintf("%d", days)
+	}
+	if !strings.HasPrefix(u.Password, "$") && u.Password != "" {
+		if pwd, err := encryptPassword(u.Password); err == nil {
+			u.Password = pwd
+		}
 	}
 	return u
 }
