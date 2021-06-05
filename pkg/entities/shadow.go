@@ -104,7 +104,7 @@ func (u Shadow) String() string {
 	}, ":")
 }
 
-func shadowDefault(s string) string {
+func ShadowDefault(s string) string {
 	if s == "" {
 		s = "/etc/shadow"
 	}
@@ -148,7 +148,7 @@ func (u Shadow) prepare() Shadow {
 
 // FIXME: Delete can be shared across all of the supported Entities
 func (u Shadow) Delete(s string) error {
-	s = shadowDefault(s)
+	s = ShadowDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -169,7 +169,7 @@ func (u Shadow) Delete(s string) error {
 
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
-	s = shadowDefault(s)
+	s = ShadowDefault(s)
 
 	u = u.prepare()
 	current, err := ParseShadow(s)
@@ -197,7 +197,7 @@ func (u Shadow) Create(s string) error {
 }
 
 func (u Shadow) Apply(s string) error {
-	s = shadowDefault(s)
+	s = ShadowDefault(s)
 
 	u = u.prepare()
 	current, err := ParseShadow(s)

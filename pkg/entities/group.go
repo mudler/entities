@@ -27,7 +27,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func groupsDefault(s string) string {
+func GroupsDefault(s string) string {
 	if s == "" {
 		s = "/etc/group"
 	}
@@ -100,7 +100,7 @@ func (u Group) String() string {
 }
 
 func (u Group) Delete(s string) error {
-	s = groupsDefault(s)
+	s = GroupsDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -135,7 +135,7 @@ func (u Group) Delete(s string) error {
 }
 
 func (u Group) Create(s string) error {
-	s = groupsDefault(s)
+	s = GroupsDefault(s)
 
 	current, err := ParseGroup(s)
 	if err != nil {
@@ -175,7 +175,7 @@ func Unique(strSlice []string) []string {
 }
 
 func (u Group) Apply(s string) error {
-	s = groupsDefault(s)
+	s = GroupsDefault(s)
 
 	current, err := ParseGroup(s)
 	if err != nil {

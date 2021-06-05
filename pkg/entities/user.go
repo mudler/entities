@@ -27,7 +27,7 @@ import (
 	passwd "github.com/willdonnelly/passwd"
 )
 
-func userDefault(s string) string {
+func UserDefault(s string) string {
 	if s == "" {
 		s = "/etc/passwd"
 	}
@@ -44,6 +44,43 @@ type UserPasswd struct {
 	Shell    string `yaml:"shell"`
 }
 
+func ParseUser(path string) (map[string]UserPasswd, error) {
+	ans := make(map[string]UserPasswd, 0)
+
+	current, err := passwd.ParseFile(path)
+	if err != nil {
+		return ans, errors.Wrap(err, "Failed parsing passwd")
+	}
+	_, err = permbits.Stat(path)
+	if err != nil {
+		return ans, errors.Wrap(err, "Failed getting permissions")
+	}
+
+	for k, v := range current {
+		uid, err := strconv.Atoi(v.Uid)
+		if err != nil {
+			return ans, errors.Wrap(err, "Invalid uid found")
+		}
+
+		gid, err := strconv.Atoi(v.Gid)
+		if err != nil {
+			return ans, errors.Wrap(err, "Invalid gid found")
+		}
+
+		ans[k] = UserPasswd{
+			Username: k,
+			Password: v.Pass,
+			Uid:      uid,
+			Gid:      gid,
+			Info:     v.Gecos,
+			Homedir:  v.Home,
+			Shell:    v.Shell,
+		}
+	}
+
+	return ans, nil
+}
+
 func (u UserPasswd) String() string {
 	return strings.Join([]string{u.Username,
 		u.Password,
@@ -56,7 +93,7 @@ func (u UserPasswd) String() string {
 }
 
 func (u UserPasswd) Delete(s string) error {
-	s = userDefault(s)
+	s = UserDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -76,7 +113,7 @@ func (u UserPasswd) Delete(s string) error {
 }
 
 func (u UserPasswd) Create(s string) error {
-	s = userDefault(s)
+	s = UserDefault(s)
 	current, err := passwd.ParseFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
@@ -102,7 +139,7 @@ func (u UserPasswd) Create(s string) error {
 }
 
 func (u UserPasswd) Apply(s string) error {
-	s = userDefault(s)
+	s = UserDefault(s)
 	current, err := passwd.ParseFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
