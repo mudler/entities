@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func gShadowDefault(s string) string {
+func GShadowDefault(s string) string {
 	if s == "" {
 		s = "/etc/gshadow"
 	}
@@ -92,7 +92,7 @@ func (u GShadow) String() string {
 }
 
 func (u GShadow) Delete(s string) error {
-	s = gShadowDefault(s)
+	s = GShadowDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -112,7 +112,7 @@ func (u GShadow) Delete(s string) error {
 }
 
 func (u GShadow) Create(s string) error {
-	s = gShadowDefault(s)
+	s = GShadowDefault(s)
 
 	current, err := ParseGShadow(s)
 	if err != nil {
@@ -139,7 +139,7 @@ func (u GShadow) Create(s string) error {
 }
 
 func (u GShadow) Apply(s string) error {
-	s = gShadowDefault(s)
+	s = GShadowDefault(s)
 
 	current, err := ParseGShadow(s)
 	if err != nil {

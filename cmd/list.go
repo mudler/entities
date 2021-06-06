@@ -45,7 +45,10 @@ func filterMatch(filter, field string) bool {
 	return true
 }
 
-func listGroups(file, order, filter string, jsonOutput bool) error {
+func listGroups(file, order, filter string, jsonOutput, groupHasShadow bool) error {
+	var err error
+	var mGShadows map[string]GShadow
+
 	file = GroupsDefault(file)
 
 	mGroups, err := ParseGroup(file)
@@ -98,6 +101,15 @@ func listGroups(file, order, filter string, jsonOutput bool) error {
 		fmt.Println(string(data))
 
 	} else {
+
+		// TODO: handle the file as an option
+		if groupHasShadow {
+			mGShadows, err = ParseGShadow(GShadowDefault(""))
+			if err != nil {
+				return err
+			}
+		}
+
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetBorders(tablewriter.Border{
 			Left:   true,
@@ -105,21 +117,34 @@ func listGroups(file, order, filter string, jsonOutput bool) error {
 			Right:  true,
 			Bottom: true,
 		})
-		table.SetHeader([]string{
+		headers := []string{
 			"Group Name", "Encrypted Password", "Group ID", "Users",
-		})
+		}
+
+		if groupHasShadow {
+			headers = append(headers, "Has GShadow")
+		}
+		table.SetHeader(headers)
 
 		for _, group := range groups {
 			gName := group
 			if order == "id" {
 				gName = mGids[group].Name
 			}
-			table.Append([]string{
+			row := []string{
 				mGroups[gName].Name,
 				mGroups[gName].Password,
 				fmt.Sprintf("%d", *mGroups[gName].Gid),
 				mGroups[gName].Users,
-			})
+			}
+
+			if groupHasShadow {
+				_, hasShadow := mGShadows[gName]
+
+				row = append(row, fmt.Sprintf("%v", hasShadow))
+			}
+
+			table.Append(row)
 
 		}
 
@@ -359,8 +384,72 @@ func listUsers(file, order, filter string, jsonOutput, userHasShadow bool) error
 	return nil
 }
 
+func listGshadows(file, order, filter string, jsonOutput bool) error {
+	file = GShadowDefault(file)
+
+	mGShadows, err := ParseGShadow(file)
+	if err != nil {
+		return err
+	}
+
+	// Sort group name
+	gshadows := []string{}
+
+	for k, _ := range mGShadows {
+		if filterMatch(filter, k) {
+			gshadows = append(gshadows, k)
+		}
+	}
+	sort.Strings(gshadows)
+
+	if jsonOutput {
+		res := []GShadow{}
+
+		for _, s := range gshadows {
+			res = append(res, mGShadows[s])
+		}
+
+		data, _ := json.Marshal(res)
+		fmt.Println(string(data))
+
+	} else {
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetBorders(tablewriter.Border{
+			Left:   true,
+			Top:    true,
+			Right:  true,
+			Bottom: true,
+		})
+		table.SetColWidth(50)
+		table.SetHeader([]string{
+			"Group Name", "Encrypted Password",
+			"Administrators", "Members",
+		})
+
+		for _, s := range gshadows {
+
+			pass := mGShadows[s].Password
+			if len(pass) > 60 {
+				pass = pass[0:60] + "\n" + pass[60:]
+			}
+
+			table.Append([]string{
+				mGShadows[s].Name,
+				pass,
+				mGShadows[s].Administrators,
+				mGShadows[s].Members,
+			})
+
+		}
+
+		table.Render()
+	}
+
+	return nil
+}
+
 var listCmd = &cobra.Command{
-	Use:   "list <shadow|groups|users>",
+	Use:   "list <shadow|groups|users|gshadow>",
 	Short: "Show entities availables",
 	Args:  cobra.MinimumNArgs(1),
 	Long:  `Show the list of entities applied on current system.`,
@@ -370,12 +459,12 @@ var listCmd = &cobra.Command{
 		}
 		etype := args[0]
 		switch etype {
-		case "shadow", "groups", "users":
+		case "shadow", "groups", "users", "gshadow":
 			break
 		default:
 			return errors.New(
 				"Invalid entity type string. " +
-					"First argument must contains one of this values: shadow|groups|users.",
+					"First argument must contains one of this values: shadow|groups|users|gshadow.",
 			)
 		}
 
@@ -396,14 +485,17 @@ var listCmd = &cobra.Command{
 		jsonOutput, _ := cmd.Flags().GetBool("json")
 		shadowHumanReadable, _ := cmd.Flags().GetBool("shadow-human-readable")
 		userHasShadow, _ := cmd.Flags().GetBool("user-has-shadow")
+		groupHasShadow, _ := cmd.Flags().GetBool("group-has-shadow")
 
 		switch etype {
 		case "groups":
-			ans = listGroups(file, order, filter, jsonOutput)
+			ans = listGroups(file, order, filter, jsonOutput, groupHasShadow)
 		case "shadow":
 			ans = listShadows(file, order, filter, jsonOutput, shadowHumanReadable)
 		case "users":
 			ans = listUsers(file, order, filter, jsonOutput, userHasShadow)
+		case "gshadow":
+			ans = listGshadows(file, order, filter, jsonOutput)
 		default:
 			return errors.New("Unexpected entity type " + etype)
 		}
@@ -420,5 +512,6 @@ func init() {
 	flags.String("filter", "", "Filter entities by name. It uses the filter as regex")
 	flags.Bool("json", false, "Show in JSON format.")
 	flags.Bool("shadow-human-readable", false, "Show shadow days in human readable format.")
-	flags.Bool("user-has-shadow", false, "Check if exist a map of the users in the /etc/shadow file. (Available only in table format)")
+	flags.Bool("user-has-shadow", false, "Check if exists a map of the users in the /etc/shadow file. (Available only in table format)")
+	flags.Bool("group-has-shadow", false, "Check if exists a map of the users in the /etc/gshadow file. (Available only in table format)")
 }
