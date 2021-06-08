@@ -30,7 +30,11 @@ import (
 
 func UserDefault(s string) string {
 	if s == "" {
-		s = "/etc/passwd"
+		// Check environment override before to use default.
+		s = os.Getenv(ENTITY_ENV_DEF_PASSWD)
+		if s == "" {
+			s = "/etc/passwd"
+		}
 	}
 	return s
 }

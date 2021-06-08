@@ -17,6 +17,13 @@ package entities
 
 import "strings"
 
+const (
+	ENTITY_ENV_DEF_GROUPS  = "ENTITY_DEFAULT_GROUPS"
+	ENTITY_ENV_DEF_PASSWD  = "ENTITY_DEFAULT_PASSWD"
+	ENTITY_ENV_DEF_SHADOW  = "ENTITY_DEFAULT_SHADOW"
+	ENTITY_ENV_DEF_GSHADOW = "ENTITY_DEFAULT_GSHADOW"
+)
+
 // Entity represent something that needs to be applied to a file
 
 type Entity interface {

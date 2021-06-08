@@ -30,7 +30,10 @@ import (
 
 func GShadowDefault(s string) string {
 	if s == "" {
-		s = "/etc/gshadow"
+		s = os.Getenv(ENTITY_ENV_DEF_GSHADOW)
+		if s == "" {
+			s = "/etc/gshadow"
+		}
 	}
 	return s
 }

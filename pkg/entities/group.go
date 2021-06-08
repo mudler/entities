@@ -30,7 +30,10 @@ import (
 
 func GroupsDefault(s string) string {
 	if s == "" {
-		s = "/etc/group"
+		s = os.Getenv(ENTITY_ENV_DEF_GROUPS)
+		if s == "" {
+			s = "/etc/group"
+		}
 	}
 	return s
 }

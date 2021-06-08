@@ -108,7 +108,10 @@ func (u Shadow) String() string {
 
 func ShadowDefault(s string) string {
 	if s == "" {
-		s = "/etc/shadow"
+		s = os.Getenv(ENTITY_ENV_DEF_SHADOW)
+		if s == "" {
+			s = "/etc/shadow"
+		}
 	}
 	return s
 }
