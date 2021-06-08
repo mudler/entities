@@ -17,6 +17,7 @@ package entities
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -184,8 +185,12 @@ func Unique(strSlice []string) []string {
 	return list
 }
 
-func (u Group) Apply(s string) error {
+func (u Group) Apply(s string, safe bool) error {
 	s = GroupsDefault(s)
+
+	if u.Name == "" {
+		return errors.New("Empty group name")
+	}
 
 	current, err := ParseGroup(s)
 	if err != nil {
@@ -195,6 +200,25 @@ func (u Group) Apply(s string) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")
 	}
+
+	if safe {
+		mGids := make(map[int]*Group)
+
+		// Create gids to check gid mismatch
+		// Maybe could be done always.
+		for _, e := range current {
+			mGids[*e.Gid] = &e
+		}
+
+		if e, present := mGids[*u.Gid]; present {
+			if e.Name != u.Name {
+				return errors.Wrap(err,
+					fmt.Sprintf("Gid %d is already used on group %s",
+						*u.Gid, u.Name))
+			}
+		}
+	}
+
 	if _, ok := current[u.Name]; ok {
 		input, err := ioutil.ReadFile(s)
 		if err != nil {
@@ -217,15 +241,16 @@ func (u Group) Apply(s string) error {
 					}
 					u.Users = strings.Join(Unique(currentUsers), ",")
 				}
-				if len(g.Name) == 0 {
-					u.Name = g.Name
+
+				if !safe {
+					if len(u.Password) == 0 {
+						u.Password = g.Password
+					}
+					if u.Gid == nil {
+						u.Gid = g.Gid
+					}
 				}
-				if len(u.Password) == 0 {
-					u.Password = g.Password
-				}
-				if u.Gid == nil {
-					u.Gid = g.Gid
-				}
+
 				lines[i] = u.String()
 			}
 		}

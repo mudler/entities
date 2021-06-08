@@ -198,7 +198,7 @@ func (u Shadow) Create(s string) error {
 	return nil
 }
 
-func (u Shadow) Apply(s string) error {
+func (u Shadow) Apply(s string, safe bool) error {
 	s = ShadowDefault(s)
 
 	u = u.prepare()
@@ -220,7 +220,7 @@ func (u Shadow) Apply(s string) error {
 		lines := strings.Split(string(input), "\n")
 
 		for i, line := range lines {
-			if entityIdentifier(line) == u.Username {
+			if entityIdentifier(line) == u.Username && !safe {
 				lines[i] = u.String()
 			}
 		}

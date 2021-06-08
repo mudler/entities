@@ -152,7 +152,7 @@ func (u GShadow) Create(s string) error {
 	return nil
 }
 
-func (u GShadow) Apply(s string) error {
+func (u GShadow) Apply(s string, safe bool) error {
 	s = GShadowDefault(s)
 
 	_, err := os.Stat(s)
@@ -175,7 +175,7 @@ func (u GShadow) Apply(s string) error {
 			lines := strings.Split(string(input), "\n")
 
 			for i, line := range lines {
-				if entityIdentifier(line) == u.Name {
+				if entityIdentifier(line) == u.Name && !safe {
 					lines[i] = u.String()
 				}
 			}

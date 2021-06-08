@@ -24,7 +24,7 @@ type Entity interface {
 	String() string
 	Delete(s string) error
 	Create(s string) error
-	Apply(s string) error
+	Apply(s string, safe bool) error
 }
 
 func entityIdentifier(s string) string {

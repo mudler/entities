@@ -17,6 +17,7 @@ package entities
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -140,15 +141,39 @@ func (u UserPasswd) Create(s string) error {
 	return nil
 }
 
-func (u UserPasswd) Apply(s string) error {
-	s = UserDefault(s)
-	current, err := passwd.ParseFile(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
+func (u UserPasswd) Apply(s string, safe bool) error {
+
+	if u.Username == "" {
+		return errors.New("Empty username field")
 	}
+
+	s = UserDefault(s)
+	current, err := ParseUser(s)
+	if err != nil {
+		return err
+	}
+
 	permissions, err := permbits.Stat(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")
+	}
+
+	if safe {
+		mUids := make(map[int]*UserPasswd)
+
+		// Create uids map to check uid mismatch
+		// Maybe could be done always
+		for _, e := range current {
+			mUids[e.Uid] = &e
+		}
+
+		if e, present := mUids[u.Uid]; present {
+			if e.Username != u.Username {
+				return errors.Wrap(err,
+					fmt.Sprintf("Uid %d is already used on user %s",
+						u.Uid, e.Username))
+			}
+		}
 	}
 
 	if _, ok := current[u.Username]; ok {
@@ -162,7 +187,9 @@ func (u UserPasswd) Apply(s string) error {
 
 		for i, line := range lines {
 			if entityIdentifier(line) == u.Username {
-				lines[i] = u.String()
+				if !safe {
+					lines[i] = u.String()
+				}
 			}
 		}
 		output := strings.Join(lines, "\n")

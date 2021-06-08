@@ -27,15 +27,21 @@ var applyCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		p := &Parser{}
 
+		safe, _ := cmd.Flags().GetBool("safe")
+
 		entity, err := p.ReadEntity(args[0])
 		if err != nil {
 			return err
 		}
 
-		return entity.Apply(entityFile)
+		return entity.Apply(entityFile, safe)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(applyCmd)
+
+	var flags = applyCmd.Flags()
+	flags.Bool("safe", false,
+		"Avoid to override existing entity if it has difference or if the id is used in a different way.")
 }
