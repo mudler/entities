@@ -82,7 +82,9 @@ func compare(currentStore, store *EntitiesStore, jsonOutput bool) error {
 			continue
 		}
 
-		if cUser.Uid != u.Uid || cUser.Gid != u.Gid || cUser.Homedir != u.Homedir || cUser.Shell != u.Shell {
+		if (u.Uid >= 0 && cUser.Uid != u.Uid) ||
+			(u.Group == "" && cUser.Gid != u.Gid) ||
+			cUser.Homedir != u.Homedir || cUser.Shell != u.Shell {
 			differences = append(differences, EntityDifference{
 				OriginalEntity: cUser,
 				TargetEntity:   u,
@@ -106,7 +108,9 @@ func compare(currentStore, store *EntitiesStore, jsonOutput bool) error {
 			continue
 		}
 
-		if cGroup.Password != g.Password || cGroup.Gid != g.Gid || cGroup.Users != g.Users {
+		if cGroup.Password != g.Password ||
+			(g.Gid != nil && *g.Gid >= 0 && cGroup.Gid != g.Gid) ||
+			cGroup.Users != g.Users {
 			differences = append(differences, EntityDifference{
 				OriginalEntity: cGroup,
 				TargetEntity:   g,
