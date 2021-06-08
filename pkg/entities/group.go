@@ -84,6 +84,34 @@ func parseGroupLine(line string) (string, Group, error) {
 	return fs[0], Group{fs[0], fs[1], &gid, fs[3]}, nil
 }
 
+func groupGetFreeGid(path string) (int, error) {
+	uidStart, uidEnd := DynamicRange()
+	mGids := make(map[int]*Group)
+	ans := -1
+
+	current, err := ParseGroup(path)
+	if err != nil {
+		return ans, err
+	}
+
+	for _, e := range current {
+		mGids[*e.Gid] = &e
+	}
+
+	for i := uidStart; i >= uidEnd; i-- {
+		if _, ok := mGids[i]; !ok {
+			ans = i
+			break
+		}
+	}
+
+	if ans < 0 {
+		return ans, errors.New("No free GID found")
+	}
+
+	return ans, nil
+}
+
 type Group struct {
 	Name     string `yaml:"group_name"`
 	Password string `yaml:"password"`
@@ -92,6 +120,19 @@ type Group struct {
 }
 
 func (u Group) GetKind() string { return GroupKind }
+
+func (u Group) prepare(s string) (Group, error) {
+	if u.Gid != nil && *u.Gid < 0 {
+		// POST: dynamic group
+		gid, err := groupGetFreeGid(s)
+		if err != nil {
+			return u, err
+		}
+		u.Gid = &gid
+	}
+
+	return u, nil
+}
 
 func (u Group) String() string {
 	var gid string
@@ -145,6 +186,11 @@ func (u Group) Delete(s string) error {
 func (u Group) Create(s string) error {
 	s = GroupsDefault(s)
 
+	u, err := u.prepare(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed entity preparation")
+	}
+
 	current, err := ParseGroup(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
@@ -189,10 +235,15 @@ func Unique(strSlice []string) []string {
 }
 
 func (u Group) Apply(s string, safe bool) error {
-	s = GroupsDefault(s)
-
 	if u.Name == "" {
 		return errors.New("Empty group name")
+	}
+
+	s = GroupsDefault(s)
+
+	u, err := u.prepare(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed entity preparation")
 	}
 
 	current, err := ParseGroup(s)
