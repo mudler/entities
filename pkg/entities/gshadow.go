@@ -82,6 +82,8 @@ type GShadow struct {
 	Members        string `yaml:"members"`
 }
 
+func (u GShadow) GetKind() string { return GShadowKind }
+
 func (u GShadow) String() string {
 	return strings.Join([]string{
 		u.Name,

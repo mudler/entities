@@ -91,6 +91,8 @@ type Shadow struct {
 	Reserved       string `yaml:"reserved"`
 }
 
+func (u Shadow) GetKind() string { return ShadowKind }
+
 func (u Shadow) String() string {
 	return strings.Join([]string{u.Username,
 		u.Password,

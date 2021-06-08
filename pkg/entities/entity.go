@@ -20,6 +20,7 @@ import "strings"
 // Entity represent something that needs to be applied to a file
 
 type Entity interface {
+	GetKind() string
 	String() string
 	Delete(s string) error
 	Create(s string) error

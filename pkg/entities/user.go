@@ -81,6 +81,8 @@ func ParseUser(path string) (map[string]UserPasswd, error) {
 	return ans, nil
 }
 
+func (u UserPasswd) GetKind() string { return UserKind }
+
 func (u UserPasswd) String() string {
 	return strings.Join([]string{u.Username,
 		u.Password,

@@ -87,6 +87,8 @@ type Group struct {
 	Users    string `yaml:"users"`
 }
 
+func (u Group) GetKind() string { return GroupKind }
+
 func (u Group) String() string {
 	var gid string
 	if u.Gid == nil {
