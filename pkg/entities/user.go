@@ -39,11 +39,72 @@ func UserDefault(s string) string {
 	return s
 }
 
+func UserDynamicRange() (int, int) {
+	// Follow Gentoo way
+	uid_start := 999
+	uid_end := 500
+
+	// Environment variable must be in the format: <minUid> + '-' + <maxUid>
+	env := os.Getenv(ENTITY_ENV_DEF_DYNAMIC_RANGE)
+	if env != "" {
+		ranges := strings.Split(env, "-")
+		if len(ranges) == 2 {
+			minUid, err := strconv.Atoi(ranges[0])
+			if err != nil {
+				// Ignore error
+				goto end
+			}
+			maxUid, err := strconv.Atoi(ranges[1])
+			if err != nil {
+				// ignore error
+				goto end
+			}
+
+			if minUid < maxUid && minUid >= 0 && minUid < 65534 && maxUid > 0 && maxUid < 65534 {
+				uid_start = maxUid
+				uid_end = minUid
+			}
+		}
+	}
+end:
+
+	return uid_start, uid_end
+}
+
+func userGetFreeUid(path string) (int, error) {
+	uidStart, uidEnd := UserDynamicRange()
+	mUids := make(map[int]*UserPasswd)
+	ans := -1
+
+	current, err := ParseUser(path)
+	if err != nil {
+		return ans, err
+	}
+
+	for _, e := range current {
+		mUids[e.Uid] = &e
+	}
+
+	for i := uidStart; i >= uidEnd; i-- {
+		if _, ok := mUids[i]; !ok {
+			ans = i
+			break
+		}
+	}
+
+	if ans < 0 {
+		return ans, errors.New("No free UID found")
+	}
+
+	return ans, nil
+}
+
 type UserPasswd struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Uid      int    `yaml:"uid"`
 	Gid      int    `yaml:"gid"`
+	Group    string `yaml:"group"`
 	Info     string `yaml:"info"`
 	Homedir  string `yaml:"homedir"`
 	Shell    string `yaml:"shell"`
@@ -88,6 +149,42 @@ func ParseUser(path string) (map[string]UserPasswd, error) {
 
 func (u UserPasswd) GetKind() string { return UserKind }
 
+func (u UserPasswd) prepare(s string) (UserPasswd, error) {
+
+	if u.Uid < 0 {
+		// POST: dynamic user
+
+		uid, err := userGetFreeUid(s)
+		if err != nil {
+			return u, err
+		}
+		u.Uid = uid
+	}
+
+	if u.Group != "" {
+		// POST: gid must be retrieved by existing file.
+		mGroups, err := ParseGroup(GroupsDefault(""))
+		if err != nil {
+			return u, errors.Wrap(err, "Error on retrieve group information")
+		}
+
+		g, ok := mGroups[u.Group]
+		if !ok {
+			return u, errors.Wrap(err, fmt.Sprintf("The group %s is not present", u.Group))
+		}
+
+		u.Gid = *g.Gid
+		// Avoid this operation if prepare is called multiple times.
+		u.Group = ""
+	}
+
+	if u.Info == "" {
+		u.Info = "Created by entities"
+	}
+
+	return u, nil
+}
+
 func (u UserPasswd) String() string {
 	return strings.Join([]string{u.Username,
 		u.Password,
@@ -121,6 +218,12 @@ func (u UserPasswd) Delete(s string) error {
 
 func (u UserPasswd) Create(s string) error {
 	s = UserDefault(s)
+
+	u, err := u.prepare(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed entity preparation")
+	}
+
 	current, err := passwd.ParseFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
@@ -146,12 +249,17 @@ func (u UserPasswd) Create(s string) error {
 }
 
 func (u UserPasswd) Apply(s string, safe bool) error {
-
 	if u.Username == "" {
 		return errors.New("Empty username field")
 	}
 
 	s = UserDefault(s)
+
+	u, err := u.prepare(s)
+	if err != nil {
+		return errors.Wrap(err, "Failed entity preparation")
+	}
+
 	current, err := ParseUser(s)
 	if err != nil {
 		return err
