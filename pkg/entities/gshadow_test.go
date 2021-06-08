@@ -46,7 +46,7 @@ var _ = Describe("GShadow", func() {
 			Expect(err).Should(BeNil())
 			Expect(entity.(GShadow).Name).Should(Equal("postmaster"))
 
-			err = entity.Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
@@ -85,7 +85,7 @@ ldap:!::
 			Expect(err).Should(BeNil())
 			Expect(entity.(GShadow).Name).Should(Equal("test"))
 
-			entity.Apply(tmpFile.Name())
+			entity.Apply(tmpFile.Name(), false)
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())

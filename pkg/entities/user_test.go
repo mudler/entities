@@ -47,7 +47,7 @@ var _ = Describe("User", func() {
 			Expect(err).Should(BeNil())
 			Expect(entity.(UserPasswd).Username).Should(Equal("root"))
 
-			err = entity.Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
@@ -81,7 +81,7 @@ gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
 			Expect(err).Should(BeNil())
 			Expect(entity.(UserPasswd).Username).Should(Equal("foo"))
 
-			err = entity.Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
