@@ -29,6 +29,38 @@ homedir: "/home/foo"
 shell: "/bin/bash"
 ```
 
+To use dynamic uid allocation set the `uid` field with value `-1`:
+
+```yaml
+kind: "user"
+username: "foo"
+password: "pass"
+uid: -1
+gid: 500
+info: "Foo!"
+homedir: "/home/foo"
+shell: "/bin/bash"
+```
+
+`entities` will searching for the first available range specified by the env variable
+`ENTITY_DYNAMIC_RANGE` or by the default the range `500-999`.
+
+
+To set gid with a dynamic id based by the group name you can set the `group` attribute:
+```yaml
+kind: "user"
+username: "foo"
+password: "pass"
+uid: 100
+group: "foogroup"
+info: "Foo!"
+homedir: "/home/foo"
+shell: "/bin/bash"
+```
+
+`entities` will retrieve the `gid` from existing `/etc/group` file.
+
+
 ### Gshadow
 
 ```yaml
@@ -64,3 +96,16 @@ password: "xx"
 gid: 1
 users: "one,two,tree"
 ```
+
+To assign a dynamic gid it's possible to use the value `-1`:
+
+```yaml
+kind: "group"
+group_name: "foogroup"
+password: "xx"
+gid: -1
+users: "one,two,tree"
+```
+
+`entities` will searching for the first available range specified by the env variable
+`ENTITY_DYNAMIC_RANGE` or by the default the range `500-999`.

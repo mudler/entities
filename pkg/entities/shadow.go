@@ -91,6 +91,8 @@ type Shadow struct {
 	Reserved       string `yaml:"reserved"`
 }
 
+func (u Shadow) GetKind() string { return ShadowKind }
+
 func (u Shadow) String() string {
 	return strings.Join([]string{u.Username,
 		u.Password,
@@ -104,9 +106,12 @@ func (u Shadow) String() string {
 	}, ":")
 }
 
-func shadowDefault(s string) string {
+func ShadowDefault(s string) string {
 	if s == "" {
-		s = "/etc/shadow"
+		s = os.Getenv(ENTITY_ENV_DEF_SHADOW)
+		if s == "" {
+			s = "/etc/shadow"
+		}
 	}
 	return s
 }
@@ -148,7 +153,7 @@ func (u Shadow) prepare() Shadow {
 
 // FIXME: Delete can be shared across all of the supported Entities
 func (u Shadow) Delete(s string) error {
-	s = shadowDefault(s)
+	s = ShadowDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -169,7 +174,7 @@ func (u Shadow) Delete(s string) error {
 
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
-	s = shadowDefault(s)
+	s = ShadowDefault(s)
 
 	u = u.prepare()
 	current, err := ParseShadow(s)
@@ -196,8 +201,8 @@ func (u Shadow) Create(s string) error {
 	return nil
 }
 
-func (u Shadow) Apply(s string) error {
-	s = shadowDefault(s)
+func (u Shadow) Apply(s string, safe bool) error {
+	s = ShadowDefault(s)
 
 	u = u.prepare()
 	current, err := ParseShadow(s)
@@ -218,7 +223,7 @@ func (u Shadow) Apply(s string) error {
 		lines := strings.Split(string(input), "\n")
 
 		for i, line := range lines {
-			if entityIdentifier(line) == u.Username {
+			if entityIdentifier(line) == u.Username && !safe {
 				lines[i] = u.String()
 			}
 		}

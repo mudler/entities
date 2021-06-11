@@ -28,9 +28,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-func gShadowDefault(s string) string {
+func GShadowDefault(s string) string {
 	if s == "" {
-		s = "/etc/gshadow"
+		s = os.Getenv(ENTITY_ENV_DEF_GSHADOW)
+		if s == "" {
+			s = "/etc/gshadow"
+		}
 	}
 	return s
 }
@@ -82,6 +85,8 @@ type GShadow struct {
 	Members        string `yaml:"members"`
 }
 
+func (u GShadow) GetKind() string { return GShadowKind }
+
 func (u GShadow) String() string {
 	return strings.Join([]string{
 		u.Name,
@@ -92,7 +97,7 @@ func (u GShadow) String() string {
 }
 
 func (u GShadow) Delete(s string) error {
-	s = gShadowDefault(s)
+	s = GShadowDefault(s)
 	input, err := ioutil.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -112,22 +117,34 @@ func (u GShadow) Delete(s string) error {
 }
 
 func (u GShadow) Create(s string) error {
-	s = gShadowDefault(s)
+	var f *os.File
 
-	current, err := ParseGShadow(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	if _, ok := current[u.Name]; ok {
-		return errors.New("Entity already present")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-	f, err := os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
-	if err != nil {
-		return errors.Wrap(err, "Could not read")
+	s = GShadowDefault(s)
+
+	_, err := os.Stat(s)
+	if err == nil {
+		current, err := ParseGShadow(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		if _, ok := current[u.Name]; ok {
+			return errors.New("Entity already present")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
+		}
+		f, err = os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
+		if err != nil {
+			return errors.Wrap(err, "Could not read")
+		}
+	} else if os.IsNotExist(err) {
+		f, err = os.OpenFile(s, os.O_RDWR|os.O_CREATE, 0400)
+		if err != nil {
+			return errors.Wrap(err, "Could not create the file")
+		}
+	} else {
+		return errors.Wrap(err, "Error on stat file")
 	}
 
 	defer f.Close()
@@ -138,41 +155,47 @@ func (u GShadow) Create(s string) error {
 	return nil
 }
 
-func (u GShadow) Apply(s string) error {
-	s = gShadowDefault(s)
+func (u GShadow) Apply(s string, safe bool) error {
+	s = GShadowDefault(s)
 
-	current, err := ParseGShadow(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-
-	if _, ok := current[u.Name]; ok {
-		input, err := ioutil.ReadFile(s)
+	_, err := os.Stat(s)
+	if err == nil {
+		current, err := ParseGShadow(s)
 		if err != nil {
-			return errors.Wrap(err, "Could not read input file")
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
 		}
 
-		lines := strings.Split(string(input), "\n")
-
-		for i, line := range lines {
-			if entityIdentifier(line) == u.Name {
-				lines[i] = u.String()
+		if _, ok := current[u.Name]; ok {
+			input, err := ioutil.ReadFile(s)
+			if err != nil {
+				return errors.Wrap(err, "Could not read input file")
 			}
-		}
-		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
-		if err != nil {
-			return errors.Wrap(err, "Could not write")
-		}
 
-	} else {
-		// Add it
+			lines := strings.Split(string(input), "\n")
+
+			for i, line := range lines {
+				if entityIdentifier(line) == u.Name && !safe {
+					lines[i] = u.String()
+				}
+			}
+			output := strings.Join(lines, "\n")
+			err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+			if err != nil {
+				return errors.Wrap(err, "Could not write")
+			}
+
+		} else {
+			// Add it
+			return u.Create(s)
+		}
+	} else if os.IsNotExist(err) {
 		return u.Create(s)
-
+	} else {
+		return errors.Wrap(err, "Could not stat file")
 	}
 
 	return nil

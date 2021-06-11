@@ -74,7 +74,7 @@ var _ = Describe("Shadow", func() {
 			Expect(err).Should(BeNil())
 			Expect(entity.(Shadow).Username).Should(Equal("halt"))
 
-			err = entity.Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
@@ -109,7 +109,7 @@ uucp:*:9797:0:::::
 			Expect(err).Should(BeNil())
 			Expect(entity.(Shadow).Username).Should(Equal("foo"))
 
-			entity.Apply(tmpFile.Name())
+			entity.Apply(tmpFile.Name(), false)
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
@@ -165,7 +165,7 @@ uucp:*:9797:0:::::
 				LastChanged: "now",
 			}
 
-			s1.Apply(tmpFile.Name())
+			s1.Apply(tmpFile.Name(), false)
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
@@ -190,7 +190,7 @@ uucp:*:9797:0:::::
 				LastChanged: "now",
 			}
 
-			s1.Apply(tmpFile.Name())
+			s1.Apply(tmpFile.Name(), false)
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())

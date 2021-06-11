@@ -47,7 +47,7 @@ var _ = Describe("Group", func() {
 			Expect(err).Should(BeNil())
 			Expect(entity.(Group).Name).Should(Equal("sddm"))
 
-			err = entity.Apply(tmpFile.Name())
+			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
@@ -80,7 +80,7 @@ ntp:x:123:
 			Expect(err).Should(BeNil())
 			Expect(entity.(Group).Name).Should(Equal("foo"))
 
-			entity.Apply(tmpFile.Name())
+			entity.Apply(tmpFile.Name(), false)
 
 			dat, err := ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
@@ -100,7 +100,7 @@ foo:xx:1:one,two,tree
 			Expect(err).Should(BeNil())
 			Expect(entity.(Group).Name).Should(Equal("foo"))
 
-			entity.Apply(tmpFile.Name())
+			entity.Apply(tmpFile.Name(), false)
 
 			dat, err = ioutil.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
