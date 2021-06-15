@@ -195,6 +195,8 @@ func (u UserPasswd) Delete(s string) error {
 }
 
 func (u UserPasswd) Create(s string) error {
+	var f *os.File
+
 	s = UserDefault(s)
 
 	u, err := u.prepare(s)
@@ -202,20 +204,31 @@ func (u UserPasswd) Create(s string) error {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
 
-	current, err := passwd.ParseFile(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	if _, ok := current[u.Username]; ok {
-		return errors.New("Entity already present")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-	f, err := os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
-	if err != nil {
-		return errors.Wrap(err, "Could not read")
+	_, err = os.Stat(s)
+	if err == nil {
+		current, err := passwd.ParseFile(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		if _, ok := current[u.Username]; ok {
+			return errors.New("Entity already present")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
+		}
+		f, err = os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
+		if err != nil {
+			return errors.Wrap(err, "Could not read")
+		}
+
+	} else if os.IsNotExist(err) {
+		f, err = os.OpenFile(s, os.O_RDWR|os.O_CREATE, 0400)
+		if err != nil {
+			return errors.Wrap(err, "Could not create the file")
+		}
+	} else {
+		return errors.Wrap(err, "Error on stat file")
 	}
 
 	defer f.Close()
@@ -238,59 +251,67 @@ func (u UserPasswd) Apply(s string, safe bool) error {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
 
-	current, err := ParseUser(s)
-	if err != nil {
-		return err
-	}
+	_, err = os.Stat(s)
+	if err == nil {
 
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-
-	if safe {
-		mUids := make(map[int]*UserPasswd)
-
-		// Create uids map to check uid mismatch
-		// Maybe could be done always
-		for _, e := range current {
-			mUids[e.Uid] = &e
-		}
-
-		if e, present := mUids[u.Uid]; present {
-			if e.Username != u.Username {
-				return errors.Wrap(err,
-					fmt.Sprintf("Uid %d is already used on user %s",
-						u.Uid, e.Username))
-			}
-		}
-	}
-
-	if _, ok := current[u.Username]; ok {
-
-		input, err := ioutil.ReadFile(s)
+		current, err := ParseUser(s)
 		if err != nil {
-			return errors.Wrap(err, "Could not read input file")
+			return err
 		}
 
-		lines := strings.Split(string(input), "\n")
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
+		}
 
-		for i, line := range lines {
-			if entityIdentifier(line) == u.Username {
-				if !safe {
-					lines[i] = u.String()
+		if safe {
+			mUids := make(map[int]*UserPasswd)
+
+			// Create uids map to check uid mismatch
+			// Maybe could be done always
+			for _, e := range current {
+				mUids[e.Uid] = &e
+			}
+
+			if e, present := mUids[u.Uid]; present {
+				if e.Username != u.Username {
+					return errors.Wrap(err,
+						fmt.Sprintf("Uid %d is already used on user %s",
+							u.Uid, e.Username))
 				}
 			}
 		}
-		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
-		if err != nil {
-			return errors.Wrap(err, "Could not write")
-		}
 
-	} else {
-		// Add it
+		if _, ok := current[u.Username]; ok {
+
+			input, err := ioutil.ReadFile(s)
+			if err != nil {
+				return errors.Wrap(err, "Could not read input file")
+			}
+
+			lines := strings.Split(string(input), "\n")
+
+			for i, line := range lines {
+				if entityIdentifier(line) == u.Username {
+					if !safe {
+						lines[i] = u.String()
+					}
+				}
+			}
+			output := strings.Join(lines, "\n")
+			err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+			if err != nil {
+				return errors.Wrap(err, "Could not write")
+			}
+
+		} else {
+			// Add it
+			return u.Create(s)
+		}
+	} else if os.IsNotExist(err) {
 		return u.Create(s)
+	} else {
+		return errors.Wrap(err, "Could not stat file")
 	}
 
 	return nil

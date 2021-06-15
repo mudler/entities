@@ -174,23 +174,36 @@ func (u Shadow) Delete(s string) error {
 
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
+	var f *os.File
+
 	s = ShadowDefault(s)
 
 	u = u.prepare()
-	current, err := ParseShadow(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	if _, ok := current[u.Username]; ok {
-		return errors.New("Entity already present")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-	f, err := os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
-	if err != nil {
-		return errors.Wrap(err, "Could not read")
+
+	_, err := os.Stat(s)
+	if err == nil {
+		current, err := ParseShadow(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		if _, ok := current[u.Username]; ok {
+			return errors.New("Entity already present")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
+		}
+		f, err = os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
+		if err != nil {
+			return errors.Wrap(err, "Could not read")
+		}
+	} else if os.IsNotExist(err) {
+		f, err = os.OpenFile(s, os.O_RDWR|os.O_CREATE, 0400)
+		if err != nil {
+			return errors.Wrap(err, "Could not create the file")
+		}
+	} else {
+		return errors.Wrap(err, "Error on stat file")
 	}
 
 	defer f.Close()
@@ -205,37 +218,45 @@ func (u Shadow) Apply(s string, safe bool) error {
 	s = ShadowDefault(s)
 
 	u = u.prepare()
-	current, err := ParseShadow(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
 
-	if _, ok := current[u.Username]; ok {
-		input, err := ioutil.ReadFile(s)
+	_, err := os.Stat(s)
+	if err == nil {
+		current, err := ParseShadow(s)
 		if err != nil {
-			return errors.Wrap(err, "Could not read input file")
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
 		}
 
-		lines := strings.Split(string(input), "\n")
-
-		for i, line := range lines {
-			if entityIdentifier(line) == u.Username && !safe {
-				lines[i] = u.String()
+		if _, ok := current[u.Username]; ok {
+			input, err := ioutil.ReadFile(s)
+			if err != nil {
+				return errors.Wrap(err, "Could not read input file")
 			}
-		}
-		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
-		if err != nil {
-			return errors.Wrap(err, "Could not write")
-		}
 
-	} else {
-		// Add it
+			lines := strings.Split(string(input), "\n")
+
+			for i, line := range lines {
+				if entityIdentifier(line) == u.Username && !safe {
+					lines[i] = u.String()
+				}
+			}
+			output := strings.Join(lines, "\n")
+			err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+			if err != nil {
+				return errors.Wrap(err, "Could not write")
+			}
+
+		} else {
+			// Add it
+			return u.Create(s)
+		}
+	} else if os.IsNotExist(err) {
 		return u.Create(s)
+	} else {
+		return errors.Wrap(err, "Could not stat file")
 	}
 
 	return nil
