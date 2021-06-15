@@ -91,14 +91,24 @@ func ParseUser(path string) (map[string]UserPasswd, error) {
 	}
 
 	for k, v := range current {
+
 		uid, err := strconv.Atoi(v.Uid)
 		if err != nil {
-			return ans, errors.Wrap(err, "Invalid uid found")
+			fmt.Println(fmt.Sprintf(
+				"WARN: Found invalid uid for user %s: %s.\nSetting 0. Check the file soon.",
+				k, err.Error(),
+			))
+			uid = 0
 		}
 
 		gid, err := strconv.Atoi(v.Gid)
 		if err != nil {
-			return ans, errors.Wrap(err, "Invalid gid found")
+			fmt.Println(fmt.Sprintf(
+				"WARN: Found invalid gid for user %s and uid %d: %s",
+				k, uid, err.Error(),
+			))
+			// Set gid with the same value of uid
+			gid = uid
 		}
 
 		ans[k] = UserPasswd{
