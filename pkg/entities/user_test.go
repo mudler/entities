@@ -114,5 +114,62 @@ unbound:x:999:955:added by portage for unbound:/etc/unbound:/sbin/nologin
 gpsd:x:139:14:added by portage for gpsd:/dev/null:/sbin/nologin
 `))
 		})
+
+		It("Read broken file", func() {
+			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			if err != nil {
+				fmt.Println("Cannot create temporary file", err)
+			}
+
+			// cleaning up by removing the file
+			defer os.Remove(tmpFile.Name())
+
+			expectedMap := map[string]UserPasswd{
+				"root": UserPasswd{
+					Username: "root",
+					Password: "x",
+					Uid:      0,
+					Gid:      0,
+					Group:    "",
+					Info:     "Foo!",
+					Homedir:  "/home/foo",
+					Shell:    "/bin/bash",
+				},
+				"brokenuid": UserPasswd{
+					Username: "brokenuid",
+					Password: "x",
+					Uid:      0,
+					Gid:      100,
+					Group:    "",
+					Info:     "group",
+					Homedir:  "/home/broken",
+					Shell:    "/bin/bash",
+				},
+				"brokengid": UserPasswd{
+					Username: "brokengid",
+					Password: "x",
+					Uid:      100,
+					Gid:      100,
+					Group:    "",
+					Info:     "group",
+					Homedir:  "/home/broken",
+					Shell:    "/bin/bash",
+				},
+			}
+
+			dat := `root:x:0:0:Foo!:/home/foo:/bin/bash
+brokenuid:x::100:group:/home/broken:/bin/bash
+brokengid:x:100::group:/home/broken:/bin/bash
+`
+
+			tmpFile.WriteString(dat)
+			tmpFile.Close()
+
+			m, err := ParseUser(tmpFile.Name())
+			Expect(err).Should(BeNil())
+			Expect(m).Should(Equal(expectedMap))
+
+		})
+
 	})
 })
