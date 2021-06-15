@@ -295,3 +295,28 @@ func (u UserPasswd) Apply(s string, safe bool) error {
 
 	return nil
 }
+
+func (u UserPasswd) Merge(e Entity) (Entity, error) {
+
+	if e.GetKind() != UserKind {
+		return u, errors.New("merge possible only for entities of the same kind")
+	}
+
+	toMerge := e.(UserPasswd)
+
+	// Maintains original uid/gid, group and password.
+
+	if toMerge.Info != "" {
+		u.Info = toMerge.Info
+	}
+
+	if toMerge.Homedir != "" {
+		u.Homedir = toMerge.Homedir
+	}
+
+	if toMerge.Shell != "" {
+		u.Shell = toMerge.Shell
+	}
+
+	return u, nil
+}

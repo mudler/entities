@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -120,6 +121,15 @@ type Group struct {
 }
 
 func (u Group) GetKind() string { return GroupKind }
+
+func (u Group) GetUsers() []string {
+	ans := []string{}
+
+	if u.Users != "" {
+		ans = strings.Split(u.Users, ",")
+	}
+	return ans
+}
 
 func (u Group) prepare(s string) (Group, error) {
 	if u.Gid != nil && *u.Gid < 0 {
@@ -319,4 +329,44 @@ func (u Group) Apply(s string, safe bool) error {
 	}
 
 	return nil
+}
+
+func (u Group) Merge(e Entity) (Entity, error) {
+
+	if e.GetKind() != GroupKind {
+		return u, errors.New("merge possible only for entities of the same kind")
+	}
+
+	toMerge := e.(Group)
+
+	// Maintains existing gid and password.
+	if toMerge.Users != "" {
+		if u.Users == "" {
+			u.Users = toMerge.Users
+		} else {
+			users := make(map[string]bool, 0)
+
+			// Read current users
+			cusers := strings.Split(u.Users, ",")
+			for _, cu := range cusers {
+				users[cu] = true
+			}
+
+			// Read new users
+			nusers := strings.Split(toMerge.Users, ",")
+			for _, cu := range nusers {
+				users[cu] = true
+			}
+
+			newUsers := []string{}
+			for k, _ := range users {
+				newUsers = append(newUsers, k)
+			}
+
+			sort.Strings(newUsers)
+			u.Users = strings.Join(newUsers, ",")
+		}
+	}
+
+	return u, nil
 }

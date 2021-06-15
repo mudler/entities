@@ -240,3 +240,31 @@ func (u Shadow) Apply(s string, safe bool) error {
 
 	return nil
 }
+
+func (s Shadow) Merge(e Entity) (Entity, error) {
+	if e.GetKind() != ShadowKind {
+		return s, errors.New("merge possible only for entities of the same kind")
+	}
+
+	toMerge := e.(Shadow)
+
+	if toMerge.MinimumChanged != "" && toMerge.MinimumChanged != "0" &&
+		(s.MinimumChanged == "0" || s.MinimumChanged == "") {
+		s.MinimumChanged = toMerge.MinimumChanged
+	}
+
+	if toMerge.MaximumChanged != "" && toMerge.MaximumChanged != "0" {
+		s.MaximumChanged = toMerge.MaximumChanged
+	}
+
+	if toMerge.Warn != "" {
+		s.Warn = toMerge.Warn
+	}
+
+	if toMerge.Inactive != "" {
+		s.Inactive = toMerge.Inactive
+	}
+
+	// NOTE: i avoid to change current password.
+	return s, nil
+}

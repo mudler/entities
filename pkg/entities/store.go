@@ -50,6 +50,8 @@ func (s *EntitiesStore) Load(dir string) error {
 
 	for _, file := range files {
 		if file.IsDir() {
+			err = s.Load(filepath.Join(dir, file.Name()))
+			// Ignoring errors. Maybe print a warning?
 			continue
 		}
 
@@ -89,7 +91,16 @@ func (s *EntitiesStore) AddUser(u UserPasswd) error {
 	if u.Username == "" {
 		return errors.New("Invalid username field")
 	}
-	s.Users[u.Username] = u
+	if e, ok := s.Users[u.Username]; ok {
+		newEntity, err := e.Merge(u)
+		if err != nil {
+			return err
+		}
+		s.Users[u.Username] = newEntity.(UserPasswd)
+	} else {
+		s.Users[u.Username] = u
+	}
+
 	return nil
 }
 
@@ -98,7 +109,17 @@ func (s *EntitiesStore) AddGroup(g Group) error {
 		return errors.New("Invalid group name field")
 	}
 
-	s.Groups[g.Name] = g
+	if e, ok := s.Groups[g.Name]; ok {
+		newEntity, err := e.Merge(g)
+		if err != nil {
+			return err
+		}
+		s.Groups[g.Name] = newEntity.(Group)
+
+	} else {
+		s.Groups[g.Name] = g
+	}
+
 	return nil
 }
 
@@ -107,7 +128,16 @@ func (s *EntitiesStore) AddShadow(e Shadow) error {
 		return errors.New("Invalid username field")
 	}
 
-	s.Shadows[e.Username] = e
+	if ne, ok := s.Shadows[e.Username]; ok {
+		newEntity, err := ne.Merge(e)
+		if err != nil {
+			return err
+		}
+		s.Shadows[e.Username] = newEntity.(Shadow)
+	} else {
+		s.Shadows[e.Username] = e
+	}
+
 	return nil
 }
 
@@ -116,7 +146,16 @@ func (s *EntitiesStore) AddGShadow(e GShadow) error {
 		return errors.New("Invalid name field")
 	}
 
-	s.GShadows[e.Name] = e
+	if ne, ok := s.GShadows[e.Name]; ok {
+		newEntity, err := ne.Merge(e)
+		if err != nil {
+			return err
+		}
+		s.GShadows[e.Name] = newEntity.(GShadow)
+	} else {
+		s.GShadows[e.Name] = e
+	}
+
 	return nil
 }
 
