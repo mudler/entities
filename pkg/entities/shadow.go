@@ -31,6 +31,7 @@ import (
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 // ParseShadow opens the file and parses it into a map from usernames to Entries
@@ -288,4 +289,12 @@ func (s Shadow) Merge(e Entity) (Entity, error) {
 
 	// NOTE: i avoid to change current password.
 	return s, nil
+}
+
+func (s Shadow) ToMap() map[interface{}]interface{} {
+	ans := make(map[interface{}]interface{}, 0)
+	d, _ := yaml.Marshal(&s)
+	yaml.Unmarshal(d, &ans)
+	ans["kind"] = s.GetKind()
+	return ans
 }

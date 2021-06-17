@@ -51,6 +51,8 @@ func mergeEntity(store, currentStore *EntitiesStore,
 					"Error on apply user %s: %s", entityName, err.Error()))
 		}
 
+		fmt.Println(fmt.Sprintf(
+			"Merged users %s.", entityName))
 	}
 
 	if g, ok := store.Groups[entityName]; ok {
@@ -73,6 +75,8 @@ func mergeEntity(store, currentStore *EntitiesStore,
 					"Error on apply group %s: %s", entityName, err.Error()))
 		}
 
+		fmt.Println(fmt.Sprintf(
+			"Merged group %s.", entityName))
 	}
 
 	if s, ok := store.Shadows[entityName]; ok {
@@ -96,6 +100,8 @@ func mergeEntity(store, currentStore *EntitiesStore,
 					"Error on apply shadow %s: %s", entityName, err.Error()))
 		}
 
+		fmt.Println(fmt.Sprintf(
+			"Merged shadow %s.", entityName))
 	}
 
 	if s, ok := store.GShadows[entityName]; ok {
@@ -117,6 +123,9 @@ func mergeEntity(store, currentStore *EntitiesStore,
 				fmt.Sprintf(
 					"Error on apply gshadow %s: %s", entityName, err.Error()))
 		}
+
+		fmt.Println(fmt.Sprintf(
+			"Merged gshadow %s.", entityName))
 
 	}
 

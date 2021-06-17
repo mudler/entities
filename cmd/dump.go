@@ -47,7 +47,8 @@ func writeUsers(store *EntitiesStore, targetDir string) error {
 			file := filepath.Join(dir, fmt.Sprintf(
 				"entity_user_%s.yaml", k))
 
-			data, err := yaml.Marshal(&u)
+			m := u.ToMap()
+			data, err := yaml.Marshal(m)
 			if err != nil {
 				return errors.New(fmt.Sprintf(
 					"Error on marshal user %s: %s",
@@ -87,7 +88,8 @@ func writeGroups(store *EntitiesStore, targetDir string) error {
 			file := filepath.Join(dir, fmt.Sprintf(
 				"entity_group_%s.yaml", k))
 
-			data, err := yaml.Marshal(&g)
+			m := g.ToMap()
+			data, err := yaml.Marshal(m)
 			if err != nil {
 				return errors.New(fmt.Sprintf(
 					"Error on marshal group %s: %s",
@@ -127,7 +129,8 @@ func writeShadows(store *EntitiesStore, targetDir string) error {
 			file := filepath.Join(dir, fmt.Sprintf(
 				"entity_shadow_%s.yaml", k))
 
-			data, err := yaml.Marshal(&e)
+			m := e.ToMap()
+			data, err := yaml.Marshal(m)
 			if err != nil {
 				return errors.New(fmt.Sprintf(
 					"Error on marshal shadow %s: %s",
@@ -167,7 +170,8 @@ func writeGShadows(store *EntitiesStore, targetDir string) error {
 			file := filepath.Join(dir, fmt.Sprintf(
 				"entity_gshadow_%s.yaml", k))
 
-			data, err := yaml.Marshal(&e)
+			m := e.ToMap()
+			data, err := yaml.Marshal(m)
 			if err != nil {
 				return errors.New(fmt.Sprintf(
 					"Error on marshal gshadow %s: %s",

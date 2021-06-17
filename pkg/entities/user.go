@@ -26,6 +26,7 @@ import (
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
 	passwd "github.com/willdonnelly/passwd"
+	"gopkg.in/yaml.v2"
 )
 
 func UserDefault(s string) string {
@@ -340,4 +341,13 @@ func (u UserPasswd) Merge(e Entity) (Entity, error) {
 	}
 
 	return u, nil
+}
+
+func (u UserPasswd) ToMap() map[interface{}]interface{} {
+	ans := make(map[interface{}]interface{}, 0)
+	d, _ := yaml.Marshal(&u)
+	yaml.Unmarshal(d, &ans)
+	ans["kind"] = u.GetKind()
+
+	return ans
 }

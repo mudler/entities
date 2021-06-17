@@ -27,6 +27,7 @@ import (
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 func GroupsDefault(s string) string {
@@ -389,4 +390,13 @@ func (u Group) Merge(e Entity) (Entity, error) {
 	}
 
 	return u, nil
+}
+
+func (u Group) ToMap() map[interface{}]interface{} {
+	ans := make(map[interface{}]interface{}, 0)
+	d, _ := yaml.Marshal(&u)
+	yaml.Unmarshal(d, &ans)
+	ans["kind"] = u.GetKind()
+
+	return ans
 }

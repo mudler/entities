@@ -63,7 +63,6 @@ func (s *EntitiesStore) Load(dir string) error {
 		if err == nil {
 			s.AddEntity(entity)
 		}
-
 	}
 
 	return nil

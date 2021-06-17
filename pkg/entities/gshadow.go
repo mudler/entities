@@ -27,6 +27,7 @@ import (
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 func GShadowDefault(s string) string {
@@ -267,4 +268,12 @@ func (s GShadow) Merge(e Entity) (Entity, error) {
 	}
 
 	return s, nil
+}
+
+func (g GShadow) ToMap() map[interface{}]interface{} {
+	ans := make(map[interface{}]interface{}, 0)
+	d, _ := yaml.Marshal(&g)
+	yaml.Unmarshal(d, &ans)
+	ans["kind"] = g.GetKind()
+	return ans
 }
