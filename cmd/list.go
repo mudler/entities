@@ -311,12 +311,23 @@ func listShadows(file, order, filter string, jsonOutput, humanReadable bool, spe
 	return nil
 }
 
-func listUsers(file, order, filter string, jsonOutput, userHasShadow bool) error {
-	file = UserDefault(file)
+func listUsers(file, order, filter string, jsonOutput, userHasShadow bool, specsdirs []string) error {
+	var err error
+	var mUsers map[string]UserPasswd
 
-	mUsers, err := ParseUser(file)
-	if err != nil {
-		return err
+	if len(specsdirs) > 0 {
+		store, err := createStore(specsdirs)
+		if err != nil {
+			return err
+		}
+		mUsers = store.Users
+
+	} else {
+		file = UserDefault(file)
+		mUsers, err = ParseUser(file)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Sort group name
@@ -419,12 +430,22 @@ func listUsers(file, order, filter string, jsonOutput, userHasShadow bool) error
 	return nil
 }
 
-func listGshadows(file, order, filter string, jsonOutput bool) error {
-	file = GShadowDefault(file)
+func listGshadows(file, order, filter string, jsonOutput bool, specsdirs []string) error {
+	var err error
+	var mGShadows map[string]GShadow
 
-	mGShadows, err := ParseGShadow(file)
-	if err != nil {
-		return err
+	if len(specsdirs) > 0 {
+		store, err := createStore(specsdirs)
+		if err != nil {
+			return err
+		}
+		mGShadows = store.GShadows
+	} else {
+		file = GShadowDefault(file)
+		mGShadows, err = ParseGShadow(file)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Sort group name
@@ -529,9 +550,9 @@ var listCmd = &cobra.Command{
 		case "shadow":
 			ans = listShadows(file, order, filter, jsonOutput, shadowHumanReadable, specsdirs)
 		case "users":
-			ans = listUsers(file, order, filter, jsonOutput, userHasShadow)
+			ans = listUsers(file, order, filter, jsonOutput, userHasShadow, specsdirs)
 		case "gshadow":
-			ans = listGshadows(file, order, filter, jsonOutput)
+			ans = listGshadows(file, order, filter, jsonOutput, specsdirs)
 		default:
 			return errors.New("Unexpected entity type " + etype)
 		}
