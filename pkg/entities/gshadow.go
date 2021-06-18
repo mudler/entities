@@ -21,11 +21,13 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 func GShadowDefault(s string) string {
@@ -199,4 +201,79 @@ func (u GShadow) Apply(s string, safe bool) error {
 	}
 
 	return nil
+}
+
+func (s GShadow) Merge(e Entity) (Entity, error) {
+	if e.GetKind() != GShadowKind {
+		return s, errors.New("merge possible only for entities of the same kind")
+	}
+
+	toMerge := e.(GShadow)
+
+	if toMerge.Administrators != "" {
+		if s.Administrators == "" {
+			s.Administrators = toMerge.Administrators
+		} else {
+			admins := make(map[string]bool, 0)
+
+			// Read current administrators
+			cadmins := strings.Split(s.Administrators, ",")
+			for _, ad := range cadmins {
+				admins[ad] = true
+			}
+
+			// Read new administrators
+			nadmins := strings.Split(toMerge.Administrators, ",")
+			for _, ad := range nadmins {
+				admins[ad] = true
+			}
+
+			newAdminstrators := []string{}
+			for k, _ := range admins {
+				newAdminstrators = append(newAdminstrators, k)
+			}
+
+			sort.Strings(newAdminstrators)
+			s.Administrators = strings.Join(newAdminstrators, ",")
+		}
+	}
+
+	if toMerge.Members != "" {
+		if s.Members == "" {
+			s.Members = toMerge.Members
+		} else {
+
+			members := make(map[string]bool, 0)
+
+			// Read current members
+			cmembers := strings.Split(s.Members, ",")
+			for _, m := range cmembers {
+				members[m] = true
+			}
+
+			// Read new members
+			nmembers := strings.Split(toMerge.Members, ",")
+			for _, m := range nmembers {
+				members[m] = true
+			}
+
+			newMembers := []string{}
+			for k, _ := range members {
+				newMembers = append(newMembers, k)
+			}
+
+			sort.Strings(newMembers)
+			s.Members = strings.Join(newMembers, ",")
+		}
+	}
+
+	return s, nil
+}
+
+func (g GShadow) ToMap() map[interface{}]interface{} {
+	ans := make(map[interface{}]interface{}, 0)
+	d, _ := yaml.Marshal(&g)
+	yaml.Unmarshal(d, &ans)
+	ans["kind"] = g.GetKind()
+	return ans
 }

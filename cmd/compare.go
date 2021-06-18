@@ -51,15 +51,21 @@ func getCurrentStatus(store *EntitiesStore, usersFile, groupsFile, shadowFile, g
 		return err
 	}
 
-	mGShadows, err := ParseGShadow(gshadowFile)
-	if err != nil {
+	// GShadow file could be not present
+	_, err = os.Stat(gshadowFile)
+	if err == nil {
+		mGShadows, err := ParseGShadow(gshadowFile)
+		if err != nil {
+			return err
+		}
+		store.GShadows = mGShadows
+	} else if !os.IsNotExist(err) {
 		return err
 	}
 
 	store.Users = mUsers
 	store.Groups = mGroups
 	store.Shadows = mShadows
-	store.GShadows = mGShadows
 
 	return nil
 }
@@ -243,20 +249,14 @@ To read /etc/shadow and /etc/gshadow requires root permissions.
 		gShadowFile, _ := cmd.Flags().GetString("gshadow-file")
 		jsonOutput, _ := cmd.Flags().GetBool("json")
 
-		store := NewEntitiesStore()
 		currentStore := NewEntitiesStore()
-
-		// Load sepcs
-		for _, d := range specsdirs {
-			err := store.Load(d)
-			if err != nil {
-				return errors.New(
-					"Error on load specs from directory " + d + ": " + err.Error())
-			}
+		store, err := createStore(specsdirs)
+		if err != nil {
+			return err
 		}
 
 		// Retrieve current information
-		err := getCurrentStatus(currentStore,
+		err = getCurrentStatus(currentStore,
 			usersFile, groupsFile, shadowFile, gShadowFile,
 		)
 		if err != nil {

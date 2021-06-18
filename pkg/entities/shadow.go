@@ -31,6 +31,7 @@ import (
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 // ParseShadow opens the file and parses it into a map from usernames to Entries
@@ -174,23 +175,36 @@ func (u Shadow) Delete(s string) error {
 
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
+	var f *os.File
+
 	s = ShadowDefault(s)
 
 	u = u.prepare()
-	current, err := ParseShadow(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	if _, ok := current[u.Username]; ok {
-		return errors.New("Entity already present")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-	f, err := os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
-	if err != nil {
-		return errors.Wrap(err, "Could not read")
+
+	_, err := os.Stat(s)
+	if err == nil {
+		current, err := ParseShadow(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		if _, ok := current[u.Username]; ok {
+			return errors.New("Entity already present")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
+		}
+		f, err = os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
+		if err != nil {
+			return errors.Wrap(err, "Could not read")
+		}
+	} else if os.IsNotExist(err) {
+		f, err = os.OpenFile(s, os.O_RDWR|os.O_CREATE, 0400)
+		if err != nil {
+			return errors.Wrap(err, "Could not create the file")
+		}
+	} else {
+		return errors.Wrap(err, "Error on stat file")
 	}
 
 	defer f.Close()
@@ -205,38 +219,82 @@ func (u Shadow) Apply(s string, safe bool) error {
 	s = ShadowDefault(s)
 
 	u = u.prepare()
-	current, err := ParseShadow(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
 
-	if _, ok := current[u.Username]; ok {
-		input, err := ioutil.ReadFile(s)
+	_, err := os.Stat(s)
+	if err == nil {
+		current, err := ParseShadow(s)
 		if err != nil {
-			return errors.Wrap(err, "Could not read input file")
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
 		}
 
-		lines := strings.Split(string(input), "\n")
-
-		for i, line := range lines {
-			if entityIdentifier(line) == u.Username && !safe {
-				lines[i] = u.String()
+		if _, ok := current[u.Username]; ok {
+			input, err := ioutil.ReadFile(s)
+			if err != nil {
+				return errors.Wrap(err, "Could not read input file")
 			}
-		}
-		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
-		if err != nil {
-			return errors.Wrap(err, "Could not write")
-		}
 
-	} else {
-		// Add it
+			lines := strings.Split(string(input), "\n")
+
+			for i, line := range lines {
+				if entityIdentifier(line) == u.Username && !safe {
+					lines[i] = u.String()
+				}
+			}
+			output := strings.Join(lines, "\n")
+			err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+			if err != nil {
+				return errors.Wrap(err, "Could not write")
+			}
+
+		} else {
+			// Add it
+			return u.Create(s)
+		}
+	} else if os.IsNotExist(err) {
 		return u.Create(s)
+	} else {
+		return errors.Wrap(err, "Could not stat file")
 	}
 
 	return nil
+}
+
+func (s Shadow) Merge(e Entity) (Entity, error) {
+	if e.GetKind() != ShadowKind {
+		return s, errors.New("merge possible only for entities of the same kind")
+	}
+
+	toMerge := e.(Shadow)
+
+	if toMerge.MinimumChanged != "" && toMerge.MinimumChanged != "0" &&
+		(s.MinimumChanged == "0" || s.MinimumChanged == "") {
+		s.MinimumChanged = toMerge.MinimumChanged
+	}
+
+	if toMerge.MaximumChanged != "" && toMerge.MaximumChanged != "0" {
+		s.MaximumChanged = toMerge.MaximumChanged
+	}
+
+	if toMerge.Warn != "" {
+		s.Warn = toMerge.Warn
+	}
+
+	if toMerge.Inactive != "" {
+		s.Inactive = toMerge.Inactive
+	}
+
+	// NOTE: i avoid to change current password.
+	return s, nil
+}
+
+func (s Shadow) ToMap() map[interface{}]interface{} {
+	ans := make(map[interface{}]interface{}, 0)
+	d, _ := yaml.Marshal(&s)
+	yaml.Unmarshal(d, &ans)
+	ans["kind"] = s.GetKind()
+	return ans
 }

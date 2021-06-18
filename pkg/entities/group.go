@@ -21,11 +21,13 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 func GroupsDefault(s string) string {
@@ -121,6 +123,15 @@ type Group struct {
 
 func (u Group) GetKind() string { return GroupKind }
 
+func (u Group) GetUsers() []string {
+	ans := []string{}
+
+	if u.Users != "" {
+		ans = strings.Split(u.Users, ",")
+	}
+	return ans
+}
+
 func (u Group) prepare(s string) (Group, error) {
 	if u.Gid != nil && *u.Gid < 0 {
 		// POST: dynamic group
@@ -184,6 +195,8 @@ func (u Group) Delete(s string) error {
 }
 
 func (u Group) Create(s string) error {
+	var f *os.File
+
 	s = GroupsDefault(s)
 
 	u, err := u.prepare(s)
@@ -191,21 +204,32 @@ func (u Group) Create(s string) error {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
 
-	current, err := ParseGroup(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	if _, ok := current[u.Name]; ok {
-		return errors.New("Entity already present")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-	// Add it
-	f, err := os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
-	if err != nil {
-		return errors.Wrap(err, "Could not read")
+	_, err = os.Stat(s)
+	if err == nil {
+		current, err := ParseGroup(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		if _, ok := current[u.Name]; ok {
+			return errors.New("Entity already present")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
+		}
+		// Add it
+		f, err = os.OpenFile(s, os.O_APPEND|os.O_WRONLY, os.FileMode(permissions))
+		if err != nil {
+			return errors.Wrap(err, "Could not read")
+		}
+
+	} else if os.IsNotExist(err) {
+		f, err = os.OpenFile(s, os.O_RDWR|os.O_CREATE, 0400)
+		if err != nil {
+			return errors.Wrap(err, "Could not create the file")
+		}
+	} else {
+		return errors.Wrap(err, "Error on stat file")
 	}
 
 	defer f.Close()
@@ -246,77 +270,133 @@ func (u Group) Apply(s string, safe bool) error {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
 
-	current, err := ParseGroup(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed parsing passwd")
-	}
-	permissions, err := permbits.Stat(s)
-	if err != nil {
-		return errors.Wrap(err, "Failed getting permissions")
-	}
-
-	if safe {
-		mGids := make(map[int]*Group)
-
-		// Create gids to check gid mismatch
-		// Maybe could be done always.
-		for _, e := range current {
-			mGids[*e.Gid] = &e
+	_, err = os.Stat(s)
+	if err == nil {
+		current, err := ParseGroup(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed parsing passwd")
+		}
+		permissions, err := permbits.Stat(s)
+		if err != nil {
+			return errors.Wrap(err, "Failed getting permissions")
 		}
 
-		if e, present := mGids[*u.Gid]; present {
-			if e.Name != u.Name {
-				return errors.Wrap(err,
-					fmt.Sprintf("Gid %d is already used on group %s",
-						*u.Gid, u.Name))
+		if safe {
+			mGids := make(map[int]*Group)
+
+			// Create gids to check gid mismatch
+			// Maybe could be done always.
+			for _, e := range current {
+				mGids[*e.Gid] = &e
+			}
+
+			if e, present := mGids[*u.Gid]; present {
+				if e.Name != u.Name {
+					return errors.Wrap(err,
+						fmt.Sprintf("Gid %d is already used on group %s",
+							*u.Gid, u.Name))
+				}
 			}
 		}
-	}
 
-	if _, ok := current[u.Name]; ok {
-		input, err := ioutil.ReadFile(s)
-		if err != nil {
-			return errors.Wrap(err, "Could not read input file")
-		}
-
-		lines := strings.Split(string(input), "\n")
-
-		for i, line := range lines {
-			if entityIdentifier(line) == u.Name {
-				// Merge the groups, don't override the whole user.
-				_, g, err := parseGroupLine(lines[i])
-				if err != nil {
-					return errors.Wrap(err, "Failed parsing current group")
-				}
-				if len(g.Users) > 0 {
-					currentUsers := strings.Split(g.Users, ",")
-					if u.Users != "" {
-						currentUsers = append(currentUsers, u.Users)
-					}
-					u.Users = strings.Join(Unique(currentUsers), ",")
-				}
-
-				if !safe {
-					if len(u.Password) == 0 {
-						u.Password = g.Password
-					}
-					if u.Gid == nil {
-						u.Gid = g.Gid
-					}
-				}
-
-				lines[i] = u.String()
+		if _, ok := current[u.Name]; ok {
+			input, err := ioutil.ReadFile(s)
+			if err != nil {
+				return errors.Wrap(err, "Could not read input file")
 			}
-		}
-		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
-		if err != nil {
-			return errors.Wrap(err, "Could not write")
-		}
 
-	} else {
+			lines := strings.Split(string(input), "\n")
+
+			for i, line := range lines {
+				if entityIdentifier(line) == u.Name {
+					// Merge the groups, don't override the whole user.
+					_, g, err := parseGroupLine(lines[i])
+					if err != nil {
+						return errors.Wrap(err, "Failed parsing current group")
+					}
+					if len(g.Users) > 0 {
+						currentUsers := strings.Split(g.Users, ",")
+						if u.Users != "" {
+							currentUsers = append(currentUsers, u.Users)
+						}
+						u.Users = strings.Join(Unique(currentUsers), ",")
+					}
+
+					if !safe {
+						if len(u.Password) == 0 {
+							u.Password = g.Password
+						}
+						if u.Gid == nil {
+							u.Gid = g.Gid
+						}
+					}
+
+					lines[i] = u.String()
+				}
+			}
+			output := strings.Join(lines, "\n")
+			err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+			if err != nil {
+				return errors.Wrap(err, "Could not write")
+			}
+
+		} else {
+			return u.Create(s)
+		}
+	} else if os.IsNotExist(err) {
 		return u.Create(s)
+	} else {
+		return errors.Wrap(err, "Could not stat file")
 	}
 
 	return nil
+}
+
+func (u Group) Merge(e Entity) (Entity, error) {
+
+	if e.GetKind() != GroupKind {
+		return u, errors.New("merge possible only for entities of the same kind")
+	}
+
+	toMerge := e.(Group)
+
+	// Maintains existing gid and password.
+	if toMerge.Users != "" {
+		if u.Users == "" {
+			u.Users = toMerge.Users
+		} else {
+			users := make(map[string]bool, 0)
+
+			// Read current users
+			cusers := strings.Split(u.Users, ",")
+			for _, cu := range cusers {
+				users[cu] = true
+			}
+
+			// Read new users
+			nusers := strings.Split(toMerge.Users, ",")
+			for _, cu := range nusers {
+				users[cu] = true
+			}
+
+			newUsers := []string{}
+			for k, _ := range users {
+				newUsers = append(newUsers, k)
+			}
+
+			sort.Strings(newUsers)
+			u.Users = strings.Join(newUsers, ",")
+		}
+	}
+
+	return u, nil
+}
+
+func (u Group) ToMap() map[interface{}]interface{} {
+	ans := make(map[interface{}]interface{}, 0)
+	d, _ := yaml.Marshal(&u)
+	yaml.Unmarshal(d, &ans)
+	ans["kind"] = u.GetKind()
+
+	return ans
 }

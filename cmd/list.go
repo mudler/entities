@@ -30,6 +30,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func createStore(specsdirs []string) (*EntitiesStore, error) {
+	store := NewEntitiesStore()
+
+	// Load sepcs
+	for _, d := range specsdirs {
+		err := store.Load(d)
+		if err != nil {
+			return store, errors.New(
+				"Error on load specs from directory " + d + ": " + err.Error())
+		}
+	}
+
+	return store, nil
+}
+
 func filterMatch(filter, field string) bool {
 	if filter == "" {
 		return true
@@ -45,15 +60,24 @@ func filterMatch(filter, field string) bool {
 	return true
 }
 
-func listGroups(file, order, filter string, jsonOutput, groupHasShadow bool) error {
+func listGroups(file, order, filter string, jsonOutput, groupHasShadow bool, specsdirs []string) error {
 	var err error
 	var mGShadows map[string]GShadow
+	var mGroups map[string]Group
 
-	file = GroupsDefault(file)
+	if len(specsdirs) > 0 {
+		store, err := createStore(specsdirs)
+		if err != nil {
+			return err
+		}
+		mGroups = store.Groups
+	} else {
+		file = GroupsDefault(file)
 
-	mGroups, err := ParseGroup(file)
-	if err != nil {
-		return err
+		mGroups, err = ParseGroup(file)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Sort group name
@@ -154,12 +178,23 @@ func listGroups(file, order, filter string, jsonOutput, groupHasShadow bool) err
 	return nil
 }
 
-func listShadows(file, order, filter string, jsonOutput, humanReadable bool) error {
-	file = ShadowDefault(file)
+func listShadows(file, order, filter string, jsonOutput, humanReadable bool, specsdirs []string) error {
+	var err error
+	var mShadows map[string]Shadow
 
-	mShadows, err := ParseShadow(file)
-	if err != nil {
-		return err
+	if len(specsdirs) > 0 {
+		store, err := createStore(specsdirs)
+		if err != nil {
+			return err
+		}
+		mShadows = store.Shadows
+
+	} else {
+		file = ShadowDefault(file)
+		mShadows, err = ParseShadow(file)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Sort group name
@@ -276,12 +311,23 @@ func listShadows(file, order, filter string, jsonOutput, humanReadable bool) err
 	return nil
 }
 
-func listUsers(file, order, filter string, jsonOutput, userHasShadow bool) error {
-	file = UserDefault(file)
+func listUsers(file, order, filter string, jsonOutput, userHasShadow bool, specsdirs []string) error {
+	var err error
+	var mUsers map[string]UserPasswd
 
-	mUsers, err := ParseUser(file)
-	if err != nil {
-		return err
+	if len(specsdirs) > 0 {
+		store, err := createStore(specsdirs)
+		if err != nil {
+			return err
+		}
+		mUsers = store.Users
+
+	} else {
+		file = UserDefault(file)
+		mUsers, err = ParseUser(file)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Sort group name
@@ -384,12 +430,22 @@ func listUsers(file, order, filter string, jsonOutput, userHasShadow bool) error
 	return nil
 }
 
-func listGshadows(file, order, filter string, jsonOutput bool) error {
-	file = GShadowDefault(file)
+func listGshadows(file, order, filter string, jsonOutput bool, specsdirs []string) error {
+	var err error
+	var mGShadows map[string]GShadow
 
-	mGShadows, err := ParseGShadow(file)
-	if err != nil {
-		return err
+	if len(specsdirs) > 0 {
+		store, err := createStore(specsdirs)
+		if err != nil {
+			return err
+		}
+		mGShadows = store.GShadows
+	} else {
+		file = GShadowDefault(file)
+		mGShadows, err = ParseGShadow(file)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Sort group name
@@ -486,16 +542,17 @@ var listCmd = &cobra.Command{
 		shadowHumanReadable, _ := cmd.Flags().GetBool("shadow-human-readable")
 		userHasShadow, _ := cmd.Flags().GetBool("user-has-shadow")
 		groupHasShadow, _ := cmd.Flags().GetBool("group-has-shadow")
+		specsdirs, _ := cmd.Flags().GetStringArray("specs-dir")
 
 		switch etype {
 		case "groups":
-			ans = listGroups(file, order, filter, jsonOutput, groupHasShadow)
+			ans = listGroups(file, order, filter, jsonOutput, groupHasShadow, specsdirs)
 		case "shadow":
-			ans = listShadows(file, order, filter, jsonOutput, shadowHumanReadable)
+			ans = listShadows(file, order, filter, jsonOutput, shadowHumanReadable, specsdirs)
 		case "users":
-			ans = listUsers(file, order, filter, jsonOutput, userHasShadow)
+			ans = listUsers(file, order, filter, jsonOutput, userHasShadow, specsdirs)
 		case "gshadow":
-			ans = listGshadows(file, order, filter, jsonOutput)
+			ans = listGshadows(file, order, filter, jsonOutput, specsdirs)
 		default:
 			return errors.New("Unexpected entity type " + etype)
 		}
@@ -514,4 +571,7 @@ func init() {
 	flags.Bool("shadow-human-readable", false, "Show shadow days in human readable format.")
 	flags.Bool("user-has-shadow", false, "Check if exists a map of the users in the /etc/shadow file. (Available only in table format)")
 	flags.Bool("group-has-shadow", false, "Check if exists a map of the users in the /etc/gshadow file. (Available only in table format)")
+
+	flags.StringArray("specs-dir", []string{},
+		"Define the directory where read entities specs in alternative to the system files.")
 }

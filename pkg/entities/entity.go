@@ -37,6 +37,8 @@ type Entity interface {
 	Delete(s string) error
 	Create(s string) error
 	Apply(s string, safe bool) error
+	Merge(e Entity) (Entity, error)
+	ToMap() map[interface{}]interface{}
 }
 
 func entityIdentifier(s string) string {
