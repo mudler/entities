@@ -255,7 +255,11 @@ func (u Group) Apply(s string, safe bool) error {
 		return errors.Wrap(err, "Failed getting permissions")
 	}
 
-	if safe {
+	if safe && u.Gid != nil {
+		// Avoid this check if the gid is not
+		// present. For example for the specs where
+		// we add users to a group.
+
 		mGids := make(map[int]*Group)
 
 		// Create gids to check gid mismatch
@@ -303,6 +307,10 @@ func (u Group) Apply(s string, safe bool) error {
 					if u.Gid == nil {
 						u.Gid = g.Gid
 					}
+				} else {
+					// Maintain existing group id and password
+					u.Gid = g.Gid
+					u.Password = g.Password
 				}
 
 				lines[i] = u.String()
