@@ -143,7 +143,22 @@ func (u Shadow) prepare() Shadow {
 		days := now.Unix() / 24 / 60 / 60
 		u.LastChanged = fmt.Sprintf("%d", days)
 	}
-	if !strings.HasPrefix(u.Password, "$") && u.Password != "" {
+	/*
+	 A password field which starts with an exclamation mark means
+	 that the password is locked. The remaining characters on the
+	 line represent the password field before the password was
+	 locked.
+
+	 Refer to crypt(3) for details on how this string is
+	 interpreted.
+
+	 If the password field contains some string that is not a
+	 valid result of crypt(3), for instance ! or *, the user will
+	 not be able to use a unix password to log in (but the user
+	 may log in the system by other means).
+	*/
+	if !strings.HasPrefix(u.Password, "$") && u.Password != "" &&
+		!strings.HasPrefix(u.Password, "!") && u.Password != "*" {
 		if pwd, err := encryptPassword(u.Password); err == nil {
 			u.Password = pwd
 		}
