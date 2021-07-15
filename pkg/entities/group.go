@@ -295,7 +295,7 @@ func (u Group) Apply(s string, safe bool) error {
 				if len(g.Users) > 0 {
 					currentUsers := strings.Split(g.Users, ",")
 					if u.Users != "" {
-						currentUsers = append(currentUsers, u.Users)
+						currentUsers = append(currentUsers, strings.Split(u.Users, ",")...)
 					}
 					u.Users = strings.Join(Unique(currentUsers), ",")
 				}
