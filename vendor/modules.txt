@@ -50,10 +50,10 @@ github.com/pkg/errors
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/tredoe/osutil v1.2.1
-github.com/tredoe/osutil/userutil/crypt
-github.com/tredoe/osutil/userutil/crypt/common
-github.com/tredoe/osutil/userutil/crypt/sha512_crypt
+# github.com/tredoe/osutil/v2 v2.0.0
+github.com/tredoe/osutil/v2/userutil/crypt
+github.com/tredoe/osutil/v2/userutil/crypt/common
+github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt
 # github.com/willdonnelly/passwd v0.0.0-20141013001024-7935dab3074c
 github.com/willdonnelly/passwd
 # golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
