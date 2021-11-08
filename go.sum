@@ -127,6 +127,8 @@ github.com/tredoe/goutil v1.0.0/go.mod h1:Qhf75QLcNEChimbl4wb8nROzw9PCFCPYTEUmTn
 github.com/tredoe/goutil v1.0.3/go.mod h1:3xnfRjsRL62q6m45f+CiDsLjsTeEqiJLvfgZFVyYWog=
 github.com/tredoe/osutil v1.0.6 h1:KJvG9AFmUPLe3hsNKyPMIjNx77CkAJtMKVS4ugAT7vM=
 github.com/tredoe/osutil v1.0.6/go.mod h1:zNq93p2DLHJWkHi2/+zi3xOjZl8xxiv3tiI2A6zcB3w=
+github.com/tredoe/osutil/v2 v2.0.0-rc.16 h1:5A2SKvyB2c3lhPYUIHyFtu6jbaXlaA3Hu5gWIam8Pik=
+github.com/tredoe/osutil/v2 v2.0.0-rc.16/go.mod h1:uLRVx/3pb7Y4RQhG8cQFbPE9ha5r81e6MXpBsxbTAYc=
 github.com/tredoe/osutil/v2 v2.0.0 h1:rZR7vwUR2syz6VVpzOwPP8zmxn79TOizjHsnTfEBvZI=
 github.com/tredoe/osutil/v2 v2.0.0/go.mod h1:uOyTaJ9tvaAw3RExCbUy19mGUxexVliRQ+0+wArdqjg=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=

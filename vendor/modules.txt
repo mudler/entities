@@ -50,7 +50,7 @@ github.com/pkg/errors
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/tredoe/osutil/v2 v2.0.0
+# github.com/tredoe/osutil/v2 v2.0.0-rc.16
 github.com/tredoe/osutil/v2/userutil/crypt
 github.com/tredoe/osutil/v2/userutil/crypt/common
 github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt
