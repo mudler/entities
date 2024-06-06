@@ -11,13 +11,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -175,7 +173,7 @@ func (u UserPasswd) String() string {
 
 func (u UserPasswd) Delete(s string) error {
 	s = UserDefault(s)
-	input, err := ioutil.ReadFile(s)
+	input, err := os.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
 	}
@@ -185,7 +183,7 @@ func (u UserPasswd) Delete(s string) error {
 	}
 	lines := bytes.Replace(input, []byte(u.String()+"\n"), []byte(""), 1)
 
-	err = ioutil.WriteFile(s, []byte(lines), os.FileMode(permissions))
+	err = os.WriteFile(s, []byte(lines), os.FileMode(permissions))
 	if err != nil {
 		return errors.Wrap(err, "Could not write")
 	}
@@ -267,7 +265,7 @@ func (u UserPasswd) Apply(s string, safe bool) error {
 
 	if _, ok := current[u.Username]; ok {
 
-		input, err := ioutil.ReadFile(s)
+		input, err := os.ReadFile(s)
 		if err != nil {
 			return errors.Wrap(err, "Could not read input file")
 		}
@@ -282,7 +280,7 @@ func (u UserPasswd) Apply(s string, safe bool) error {
 			}
 		}
 		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+		err = os.WriteFile(s, []byte(output), os.FileMode(permissions))
 		if err != nil {
 			return errors.Wrap(err, "Could not write")
 		}

@@ -11,7 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
@@ -19,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"strconv"
@@ -168,7 +166,7 @@ func (u Shadow) prepare() Shadow {
 // FIXME: Delete can be shared across all of the supported Entities
 func (u Shadow) Delete(s string) error {
 	s = ShadowDefault(s)
-	input, err := ioutil.ReadFile(s)
+	input, err := os.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
 	}
@@ -178,7 +176,7 @@ func (u Shadow) Delete(s string) error {
 	}
 	lines := bytes.Replace(input, []byte(u.String()+"\n"), []byte(""), 1)
 
-	err = ioutil.WriteFile(s, []byte(lines), os.FileMode(permissions))
+	err = os.WriteFile(s, []byte(lines), os.FileMode(permissions))
 	if err != nil {
 		return errors.Wrap(err, "Could not write")
 	}
@@ -229,7 +227,7 @@ func (u Shadow) Apply(s string, safe bool) error {
 	}
 
 	if _, ok := current[u.Username]; ok {
-		input, err := ioutil.ReadFile(s)
+		input, err := os.ReadFile(s)
 		if err != nil {
 			return errors.Wrap(err, "Could not read input file")
 		}
@@ -242,7 +240,7 @@ func (u Shadow) Apply(s string, safe bool) error {
 			}
 		}
 		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+		err = os.WriteFile(s, []byte(output), os.FileMode(permissions))
 		if err != nil {
 			return errors.Wrap(err, "Could not write")
 		}

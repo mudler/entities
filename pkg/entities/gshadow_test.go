@@ -11,12 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	. "github.com/mudler/entities/pkg/entities"
@@ -30,7 +28,7 @@ var _ = Describe("GShadow", func() {
 		p := &Parser{}
 
 		It("Changes an entry", func() {
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -48,7 +46,7 @@ var _ = Describe("GShadow", func() {
 			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`systemd-bus-proxy:!::
@@ -69,7 +67,7 @@ ldap:!::
 		})
 
 		It("Adds and deletes an entry", func() {
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -86,7 +84,7 @@ ldap:!::
 
 			entity.Apply(tmpFile.Name(), false)
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`systemd-bus-proxy:!::
@@ -107,7 +105,7 @@ test:!:foo,bar:foo,baz
 `))
 
 			entity.Delete(tmpFile.Name())
-			dat, err = ioutil.ReadFile(tmpFile.Name())
+			dat, err = os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`systemd-bus-proxy:!::
