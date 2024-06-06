@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mauromorales/xpasswd/pkg/users"
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
-	passwd "github.com/willdonnelly/passwd"
 )
 
 func UserDefault(s string) string {
@@ -78,44 +78,47 @@ type UserPasswd struct {
 func ParseUser(path string) (map[string]UserPasswd, error) {
 	ans := make(map[string]UserPasswd, 0)
 
-	current, err := passwd.ParseFile(path)
+	list := users.NewUserList()
+	list.SetPath(path)
+	users, err := list.GetAll()
 	if err != nil {
-		return ans, errors.Wrap(err, "Failed parsing passwd")
+		return ans, errors.Wrap(err, "Failed loading user list")
 	}
+
 	_, err = permbits.Stat(path)
 	if err != nil {
 		return ans, errors.Wrap(err, "Failed getting permissions")
 	}
 
-	for k, v := range current {
-
-		uid, err := strconv.Atoi(v.Uid)
+	for _, user := range users {
+		username := user.Username()
+		uid, err := user.UID()
 		if err != nil {
 			fmt.Println(fmt.Sprintf(
 				"WARN: Found invalid uid for user %s: %s.\nSetting 0. Check the file soon.",
-				k, err.Error(),
+				username, err.Error(),
 			))
 			uid = 0
 		}
 
-		gid, err := strconv.Atoi(v.Gid)
+		gid, err := user.GID()
 		if err != nil {
 			fmt.Println(fmt.Sprintf(
 				"WARN: Found invalid gid for user %s and uid %d: %s",
-				k, uid, err.Error(),
+				username, uid, err.Error(),
 			))
 			// Set gid with the same value of uid
 			gid = uid
 		}
 
-		ans[k] = UserPasswd{
-			Username: k,
-			Password: v.Pass,
+		ans[username] = UserPasswd{
+			Username: username,
+			Password: user.Password(),
 			Uid:      uid,
 			Gid:      gid,
-			Info:     v.Gecos,
-			Homedir:  v.Home,
-			Shell:    v.Shell,
+			Info:     user.RealName(),
+			Homedir:  user.HomeDir(),
+			Shell:    user.Shell(),
 		}
 	}
 
@@ -199,11 +202,15 @@ func (u UserPasswd) Create(s string) error {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
 
-	current, err := passwd.ParseFile(s)
+	list := users.NewUserList()
+	list.SetPath(s)
+	err = list.Load()
 	if err != nil {
 		return errors.Wrap(err, "Failed parsing passwd")
 	}
-	if _, ok := current[u.Username]; ok {
+
+	user := list.Get(u.Username)
+	if user != nil {
 		return errors.New("Entity already present")
 	}
 	permissions, err := permbits.Stat(s)
