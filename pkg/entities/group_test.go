@@ -11,12 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	. "github.com/mudler/entities/pkg/entities"
@@ -30,7 +28,7 @@ var _ = Describe("Group", func() {
 		p := &Parser{}
 
 		It("Changes an entry", func() {
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -48,7 +46,7 @@ var _ = Describe("Group", func() {
 			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`nm-openconnect:x:979:
@@ -63,7 +61,7 @@ ntp:x:123:
 		})
 
 		It("Adds and deletes an entry", func() {
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -80,7 +78,7 @@ ntp:x:123:
 
 			entity.Apply(tmpFile.Name(), false)
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`nm-openconnect:x:979:
@@ -100,7 +98,7 @@ foo:xx:1:one,two,tree
 
 			entity.Apply(tmpFile.Name(), false)
 
-			dat, err = ioutil.ReadFile(tmpFile.Name())
+			dat, err = os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`nm-openconnect:x:979:
@@ -115,7 +113,7 @@ foo:xx:1:one,two,tree,four
 `))
 
 			entity.Delete(tmpFile.Name())
-			dat, err = ioutil.ReadFile(tmpFile.Name())
+			dat, err = os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`nm-openconnect:x:979:

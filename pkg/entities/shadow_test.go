@@ -11,13 +11,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities_test
 
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -57,7 +55,7 @@ var _ = Describe("Shadow", func() {
 		p := &Parser{}
 
 		It("Changes an entry", func() {
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -75,7 +73,7 @@ var _ = Describe("Shadow", func() {
 			err = entity.Apply(tmpFile.Name(), false)
 			Expect(err).Should(BeNil())
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(MatchRegexp(`halt\:\$.*\:1:2:3:4:5:6:`))
 			Expect(string(dat)).To(ContainSubstring(
@@ -92,7 +90,7 @@ uucp:*:9797:0:::::
 		})
 
 		It("Adds and deletes an entry", func() {
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -109,7 +107,7 @@ uucp:*:9797:0:::::
 
 			entity.Apply(tmpFile.Name(), false)
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`halt:*:9797:0:::::
@@ -126,7 +124,7 @@ foo:$bar:1:2:3:4:5:6:
 `))
 
 			entity.Delete(tmpFile.Name())
-			dat, err = ioutil.ReadFile(tmpFile.Name())
+			dat, err = os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal(
 				`halt:*:9797:0:::::
@@ -149,7 +147,7 @@ uucp:*:9797:0:::::
 		By("Giving a specific user", func() {
 			t := time.Now()
 			days := t.Unix() / 24 / 60 / 60
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -165,7 +163,7 @@ uucp:*:9797:0:::::
 
 			s1.Apply(tmpFile.Name(), false)
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(Equal("user1:$!:" + fmt.Sprintf("%d", days) + "::::::\n"))
 
@@ -174,7 +172,7 @@ uucp:*:9797:0:::::
 		By("Giving a specific user", func() {
 			t := time.Now()
 			days := t.Unix() / 24 / 60 / 60
-			tmpFile, err := ioutil.TempFile(os.TempDir(), "pre-")
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
 			if err != nil {
 				fmt.Println("Cannot create temporary file", err)
 			}
@@ -190,7 +188,7 @@ uucp:*:9797:0:::::
 
 			s1.Apply(tmpFile.Name(), false)
 
-			dat, err := ioutil.ReadFile(tmpFile.Name())
+			dat, err := os.ReadFile(tmpFile.Name())
 			Expect(err).Should(BeNil())
 			Expect(string(dat)).To(MatchRegexp(`user1\:\$.*\:` + fmt.Sprintf("%d", days) + ":.*"))
 

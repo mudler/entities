@@ -11,14 +11,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -149,7 +147,7 @@ func (u Group) String() string {
 
 func (u Group) Delete(s string) error {
 	s = GroupsDefault(s)
-	input, err := ioutil.ReadFile(s)
+	input, err := os.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
 	}
@@ -174,7 +172,7 @@ func (u Group) Delete(s string) error {
 
 	output := strings.Join(lines, "\n")
 
-	err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+	err = os.WriteFile(s, []byte(output), os.FileMode(permissions))
 	if err != nil {
 		return errors.Wrap(err, "Could not write")
 	}
@@ -277,7 +275,7 @@ func (u Group) Apply(s string, safe bool) error {
 	}
 
 	if _, ok := current[u.Name]; ok {
-		input, err := ioutil.ReadFile(s)
+		input, err := os.ReadFile(s)
 		if err != nil {
 			return errors.Wrap(err, "Could not read input file")
 		}
@@ -316,7 +314,7 @@ func (u Group) Apply(s string, safe bool) error {
 			}
 		}
 		output := strings.Join(lines, "\n")
-		err = ioutil.WriteFile(s, []byte(output), os.FileMode(permissions))
+		err = os.WriteFile(s, []byte(output), os.FileMode(permissions))
 		if err != nil {
 			return errors.Wrap(err, "Could not write")
 		}
