@@ -11,13 +11,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -26,6 +27,8 @@ const (
 	ENTITY_ENV_DEF_SHADOW        = "ENTITY_DEFAULT_SHADOW"
 	ENTITY_ENV_DEF_GSHADOW       = "ENTITY_DEFAULT_GSHADOW"
 	ENTITY_ENV_DEF_DYNAMIC_RANGE = "ENTITY_DYNAMIC_RANGE"
+	ENTITY_ENV_DEF_DELAY         = "ENTITY_DEFAULT_DELAY"
+	ENTITY_ENV_DEF_INTERVAL      = "ENTITY_DEFAULT_INTERVAL"
 )
 
 // Entity represent something that needs to be applied to a file
@@ -77,4 +80,24 @@ func DynamicRange() (int, int) {
 end:
 
 	return uid_start, uid_end
+}
+
+func RetryForDuration() (time.Duration, error) {
+	s := os.Getenv(ENTITY_ENV_DEF_DELAY)
+	if s != "" {
+		// convert string to int64
+		return time.ParseDuration(fmt.Sprintf("%s", s))
+	}
+
+	return time.ParseDuration("5s")
+}
+
+func RetryIntervalDuration() (time.Duration, error) {
+	s := os.Getenv(ENTITY_ENV_DEF_INTERVAL)
+	if s != "" {
+		// convert string to int64
+		return time.ParseDuration(fmt.Sprintf("%s", s))
+	}
+
+	return time.ParseDuration("300ms")
 }

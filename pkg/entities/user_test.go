@@ -16,7 +16,10 @@ package entities_test
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"sync"
 
+	"github.com/gofrs/flock"
 	. "github.com/mudler/entities/pkg/entities"
 
 	. "github.com/onsi/ginkgo"
@@ -167,5 +170,33 @@ brokengid:x:100::group:/home/broken:/bin/bash
 
 		})
 
+		It("Works with locks", func() {
+			tmpFile, err := os.CreateTemp(os.TempDir(), "pre-")
+			if err != nil {
+				fmt.Println("Cannot create temporary file", err)
+			}
+
+			// cleaning up by removing the file
+			defer os.Remove(tmpFile.Name())
+
+			_, err = copy("../../testing/fixtures/simple/passwd", tmpFile.Name())
+			Expect(err).Should(BeNil())
+
+			entity, err := p.ReadEntity("../../testing/fixtures/simple/update.yaml")
+			Expect(err).Should(BeNil())
+			Expect(entity.(UserPasswd).Username).Should(Equal("root"))
+
+			baseName := filepath.Base(tmpFile.Name())
+			fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+			defer os.Remove(fileLock.Path())
+			locked, err := fileLock.TryLock()
+			Expect(err).To(BeNil())
+			Expect(locked).To(BeTrue())
+			defer fileLock.Close()
+
+			err = entity.Apply(tmpFile.Name(), false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("Failed locking file"))
+		})
 	})
 })

@@ -3,7 +3,7 @@ module github.com/mudler/entities
 go 1.21
 
 require (
-	github.com/mauromorales/xpasswd v0.3.0
+	github.com/mauromorales/xpasswd v0.3.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.33.0
@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect

@@ -16,14 +16,17 @@ package entities
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gofrs/flock"
 	"github.com/tredoe/osutil/v2/userutil/crypt/sha512_crypt"
 
 	permbits "github.com/phayes/permbits"
@@ -166,6 +169,26 @@ func (u Shadow) prepare() Shadow {
 // FIXME: Delete can be shared across all of the supported Entities
 func (u Shadow) Delete(s string) error {
 	s = ShadowDefault(s)
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
+
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
+
 	input, err := os.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -187,6 +210,26 @@ func (u Shadow) Delete(s string) error {
 // FIXME: Create can be shared across all of the supported Entities
 func (u Shadow) Create(s string) error {
 	s = ShadowDefault(s)
+
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
+
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
 
 	u = u.prepare()
 	current, err := ParseShadow(s)
@@ -227,6 +270,26 @@ func (u Shadow) Apply(s string, safe bool) error {
 	}
 
 	if _, ok := current[u.Username]; ok {
+		d, err := RetryForDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting delay")
+		}
+
+		baseName := filepath.Base(s)
+		fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+		defer os.Remove(fileLock.Path())
+		defer fileLock.Close()
+		lockCtx, cancel := context.WithTimeout(context.Background(), d)
+		defer cancel()
+		i, err := RetryIntervalDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting interval")
+		}
+		locked, err := fileLock.TryLockContext(lockCtx, i)
+		if err != nil || !locked {
+			return errors.Wrap(err, "Failed locking file")
+		}
+
 		input, err := os.ReadFile(s)
 		if err != nil {
 			return errors.Wrap(err, "Could not read input file")

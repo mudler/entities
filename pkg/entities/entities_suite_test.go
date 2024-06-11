@@ -11,10 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package entities_test
 
 import (
+	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -25,3 +25,13 @@ func TestSolver(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Entities Suite")
 }
+
+var _ = BeforeSuite(func() {
+	os.Setenv("ENTITY_DEFAULT_DELAY", "100ms")
+	os.Setenv("ENTITY_DEFAULT_INTERVAL", "10ms")
+})
+
+var _ = AfterSuite(func() {
+	os.Unsetenv("ENTITY_DEFAULT_DELAY")
+	os.Unsetenv("ENTITY_DEFAULT_INTERVAL")
+})
