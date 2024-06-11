@@ -15,14 +15,18 @@ package entities
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/mauromorales/xpasswd/pkg/users"
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
+
+	"github.com/gofrs/flock"
 )
 
 func UserDefault(s string) string {
@@ -81,7 +85,7 @@ func ParseUser(path string) (map[string]UserPasswd, error) {
 	list := users.NewUserList()
 	list.SetPath(path)
 	users, err := list.GetAll()
-	if err != nil {
+	if err != nil && len(users) == 0 {
 		return ans, errors.Wrap(err, "Failed loading user list")
 	}
 
@@ -176,6 +180,28 @@ func (u UserPasswd) String() string {
 
 func (u UserPasswd) Delete(s string) error {
 	s = UserDefault(s)
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
+
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
+
 	input, err := os.ReadFile(s)
 	if err != nil {
 		return errors.Wrap(err, "Could not read input file")
@@ -196,8 +222,28 @@ func (u UserPasswd) Delete(s string) error {
 
 func (u UserPasswd) Create(s string) error {
 	s = UserDefault(s)
+	d, err := RetryForDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting delay")
+	}
 
-	u, err := u.prepare(s)
+	baseName := filepath.Base(s)
+	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	defer os.Remove(fileLock.Path())
+	defer fileLock.Close()
+	lockCtx, cancel := context.WithTimeout(context.Background(), d)
+	defer cancel()
+
+	i, err := RetryIntervalDuration()
+	if err != nil {
+		return errors.Wrap(err, "Failed getting interval")
+	}
+	locked, err := fileLock.TryLockContext(lockCtx, i)
+	if err != nil || !locked {
+		return errors.Wrap(err, "Failed locking file")
+	}
+
+	u, err = u.prepare(s)
 	if err != nil {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
@@ -271,6 +317,26 @@ func (u UserPasswd) Apply(s string, safe bool) error {
 	}
 
 	if _, ok := current[u.Username]; ok {
+		d, err := RetryForDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting delay")
+		}
+
+		baseName := filepath.Base(s)
+		fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+		defer os.Remove(fileLock.Path())
+		defer fileLock.Close()
+		lockCtx, cancel := context.WithTimeout(context.Background(), d)
+		defer cancel()
+
+		i, err := RetryIntervalDuration()
+		if err != nil {
+			return errors.Wrap(err, "Failed getting interval")
+		}
+		locked, err := fileLock.TryLockContext(lockCtx, i)
+		if err != nil || !locked {
+			return errors.Wrap(err, "Failed locking file")
+		}
 
 		input, err := os.ReadFile(s)
 		if err != nil {
