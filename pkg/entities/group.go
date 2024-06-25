@@ -85,31 +85,27 @@ func parseGroupLine(line string) (string, Group, error) {
 }
 
 func groupGetFreeGid(path string) (int, error) {
-	uidStart, uidEnd := DynamicRange()
-	mGids := make(map[int]*Group)
-	ans := -1
+	result := -1
+	allGroups, _ := ParseGroup(path)
+	groupSet := make(map[int]struct{})
 
-	current, err := ParseGroup(path)
-	if err != nil {
-		return ans, err
+	for _, groupID := range allGroups {
+		groupSet[*groupID.Gid] = struct{}{}
 	}
 
-	for _, e := range current {
-		mGids[*e.Gid] = &e
-	}
-
-	for i := uidStart; i >= uidEnd; i-- {
-		if _, ok := mGids[i]; !ok {
-			ans = i
-			break
+	for i := HumanIDMin; i <= HumanIDMax; i++ {
+		if _, found := groupSet[i]; found {
+			continue // uid in use, skip it
 		}
+		result = i // found a free one, stop here
+		break
 	}
 
-	if ans < 0 {
-		return ans, errors.New("No free GID found")
+	if result == -1 {
+		return result, errors.New("no available gid in range")
 	}
 
-	return ans, nil
+	return result, nil
 }
 
 type Group struct {

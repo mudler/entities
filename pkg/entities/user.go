@@ -48,9 +48,7 @@ func userGetFreeUid(path string) (int, error) {
 		return 0, errors.Wrap(err, "Failed parsing passwd")
 	}
 
-	// https://systemd.io/UIDS-GIDS/#summary
-	// https://systemd.io/UIDS-GIDS/#special-distribution-uid-ranges
-	id, err := list.GenerateUIDInRange(1000, 60000)
+	id, err := list.GenerateUIDInRange(HumanIDMin, HumanIDMax)
 	if err != nil {
 		return 0, errors.Wrap(err, "Failed generating a unique uid")
 	}
