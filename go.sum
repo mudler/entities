@@ -70,10 +70,8 @@ github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czP
 github.com/mattn/go-runewidth v0.0.9 h1:Lm995f3rfxdpd6TSmuVCHVb/QhupuXlYr8sCI/QdE+0=
 github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m2gUSrubnMI=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
-github.com/mauromorales/xpasswd v0.3.0 h1:yVfSoAgKp3uEzkbqzp0mWAdbVFdBzSsBknTqn1Wy/Jo=
-github.com/mauromorales/xpasswd v0.3.0/go.mod h1:Z3+aY19mhNfcGi3st0+RAVSz2vC+pyoju2S/FPN8kEg=
-github.com/mauromorales/xpasswd v0.3.1 h1:mVPGISfzN/WaCUjYRFiDgIREb2NMfwgPSj3LS6QMm0Q=
-github.com/mauromorales/xpasswd v0.3.1/go.mod h1:Z3+aY19mhNfcGi3st0+RAVSz2vC+pyoju2S/FPN8kEg=
+github.com/mauromorales/xpasswd v0.4.0 h1:Jf6mfA8lwQsYzwgfQADPDGV7l/liAvRrnG+nQTPy0j8=
+github.com/mauromorales/xpasswd v0.4.0/go.mod h1:Z3+aY19mhNfcGi3st0+RAVSz2vC+pyoju2S/FPN8kEg=
 github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=

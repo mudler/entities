@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mauromorales/xpasswd/pkg/users"
+	xusers "github.com/mauromorales/xpasswd/pkg/users"
 	permbits "github.com/phayes/permbits"
 	"github.com/pkg/errors"
 
@@ -41,31 +41,19 @@ func UserDefault(s string) string {
 }
 
 func userGetFreeUid(path string) (int, error) {
-	uidStart, uidEnd := DynamicRange()
-	mUids := make(map[int]*UserPasswd)
-	ans := -1
-
-	current, err := ParseUser(path)
+	list := xusers.NewUserList()
+	list.SetPath(path)
+	err := list.Load()
 	if err != nil {
-		return ans, err
+		return 0, errors.Wrap(err, "Failed parsing passwd")
 	}
 
-	for _, e := range current {
-		mUids[e.Uid] = &e
+	id, err := list.GenerateUIDInRange(1000, 65534)
+	if err != nil {
+		return 0, errors.Wrap(err, "Failed generating a unique uid")
 	}
 
-	for i := uidStart; i >= uidEnd; i-- {
-		if _, ok := mUids[i]; !ok {
-			ans = i
-			break
-		}
-	}
-
-	if ans < 0 {
-		return ans, errors.New("No free UID found")
-	}
-
-	return ans, nil
+	return id, nil
 }
 
 type UserPasswd struct {
@@ -82,7 +70,7 @@ type UserPasswd struct {
 func ParseUser(path string) (map[string]UserPasswd, error) {
 	ans := make(map[string]UserPasswd, 0)
 
-	list := users.NewUserList()
+	list := xusers.NewUserList()
 	list.SetPath(path)
 	users, err := list.GetAll()
 	if err != nil && len(users) == 0 {
@@ -248,7 +236,7 @@ func (u UserPasswd) Create(s string) error {
 		return errors.Wrap(err, "Failed entity preparation")
 	}
 
-	list := users.NewUserList()
+	list := xusers.NewUserList()
 	list.SetPath(s)
 	err = list.Load()
 	if err != nil {
