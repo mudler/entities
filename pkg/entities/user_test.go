@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/gofrs/flock"
 	. "github.com/mudler/entities/pkg/entities"
