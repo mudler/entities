@@ -152,7 +152,10 @@ func (u Group) Delete(s string) error {
 	}
 
 	baseName := filepath.Base(s)
-	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	if _, ok := os.Stat("/run/lock/"); os.IsNotExist(ok) {
+		_ = os.Mkdir("/run/lock/", 0755)
+	}
+	fileLock := flock.New(fmt.Sprintf("/run/lock/%s.lock", baseName))
 	defer os.Remove(fileLock.Path())
 	defer fileLock.Close()
 	lockCtx, cancel := context.WithTimeout(context.Background(), d)
@@ -206,7 +209,10 @@ func (u Group) Create(s string) error {
 	}
 
 	baseName := filepath.Base(s)
-	fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+	if _, ok := os.Stat("/run/lock/"); os.IsNotExist(ok) {
+		_ = os.Mkdir("/run/lock/", 0755)
+	}
+	fileLock := flock.New(fmt.Sprintf("/run/lock/%s.lock", baseName))
 	defer os.Remove(fileLock.Path())
 	defer fileLock.Close()
 	lockCtx, cancel := context.WithTimeout(context.Background(), d)
@@ -318,7 +324,10 @@ func (u Group) Apply(s string, safe bool) error {
 		}
 
 		baseName := filepath.Base(s)
-		fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+		if _, ok := os.Stat("/run/lock/"); os.IsNotExist(ok) {
+			_ = os.Mkdir("/run/lock/", 0755)
+		}
+		fileLock := flock.New(fmt.Sprintf("/run/lock/%s.lock", baseName))
 		defer os.Remove(fileLock.Path())
 		defer fileLock.Close()
 		lockCtx, cancel := context.WithTimeout(context.Background(), d)

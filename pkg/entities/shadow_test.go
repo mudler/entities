@@ -159,7 +159,7 @@ uucp:*:9797:0:::::
 			Expect(entity.(Shadow).Username).Should(Equal("halt"))
 
 			baseName := filepath.Base(tmpFile.Name())
-			fileLock := flock.New(fmt.Sprintf("/var/lock/%s.lock", baseName))
+			fileLock := flock.New(fmt.Sprintf("/run/lock/%s.lock", baseName))
 			defer os.Remove(fileLock.Path())
 			locked, err := fileLock.TryLock()
 			Expect(err).To(BeNil())
