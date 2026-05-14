@@ -279,8 +279,30 @@ func (u Shadow) Apply(s string, safe bool) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed getting permissions")
 	}
+	if existing, ok := current[u.Username]; ok {
+		// If we have some existing values in the current which are empty in the updated one, copy those
+		if existing.LastChanged != "" && u.LastChanged == "" {
+			u.LastChanged = existing.LastChanged
+		}
+		if existing.MinimumChanged != "" && u.MinimumChanged == "" {
+			u.MinimumChanged = existing.MinimumChanged
+		}
+		if existing.MaximumChanged != "" && u.MaximumChanged == "" {
+			u.MaximumChanged = existing.MaximumChanged
+		}
+		if existing.Warn != "" && u.Warn == "" {
+			u.Warn = existing.Warn
+		}
+		if existing.Inactive != "" && u.Inactive == "" {
+			u.Inactive = existing.Inactive
+		}
+		if existing.Expire != "" && u.Expire == "" {
+			u.Expire = existing.Expire
+		}
+		if existing.Reserved != "" && u.Reserved == "" {
+			u.Reserved = existing.Reserved
+		}
 
-	if _, ok := current[u.Username]; ok {
 		d, err := RetryForDuration()
 		if err != nil {
 			return errors.Wrap(err, "Failed getting delay")
